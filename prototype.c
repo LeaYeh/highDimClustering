@@ -1,3 +1,7 @@
+// implement original jclin's <real-time and automatic two-class clustering by analytical formulas>
+// with method 1. in page 1921
+// prototype code in c language
+
 #include "global.h"
 float pa, pb;
 float avg_x, avg_y, avg_z;
