@@ -1,6 +1,4 @@
 #include "global.h"
-#define MAX_DIM 1024 // allow to have up to 1024 dimension
-int dataPointSize = 0, dataDimension = 0;
 
 void DatasetRead(char *filePath, float *point);
 void PrintDataPoint(float *points);
@@ -52,7 +50,7 @@ void DatasetRead(char *filePath, float *point) {
       if (strlen(pch) > 0) { 
         //printf("%.2f\n", atof(pch));
         //point[data_index++] = atof(pch);
-        *(point+data_index) = atof(pch);
+        point[data_index] = atof(pch);
         data_index++;
         if (data_index == dataPointSize*dataDimension) {
           fclose(fp);
