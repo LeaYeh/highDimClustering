@@ -1,6 +1,5 @@
 test/
-dataset/
-
 *.swp
 *.o
 test.c
+*.ipynb
