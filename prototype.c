@@ -4,9 +4,6 @@
 
 #include "global.h"
 
-void DatasetRead(char *filePath, float *point);
-void PrintDataPoint(float *points);
-void setInit_3d(float *points);
 double pa, pb;
 double avg_x, avg_y, avg_z;
 double avg_xy, avg_xz, avg_yz, avg_xyz;
@@ -37,8 +34,9 @@ int main (int argc, char *argv[]) {
     printf("point_size can not be 0, and dimension must >= 3\n");
   }*/
   DatasetRead(filePath, points);
-  PrintDataPoint(points);
+  //PrintDataPoint(points);
   setInit_3d(points);
+  //PrintDataPoint(points);
 
   return 0;
 }
@@ -51,7 +49,7 @@ void PrintDataPoint(double *points) {
     }
     printf("\n");
   }
-  printf("[finish] print dataset.\n");
+  printf("[finish] print dataset.\n\n");
 }
 void setInit_3d(double *points) {
   double sum_x = 0, sum_y = 0, sum_z = 0;
@@ -164,7 +162,7 @@ void DatasetRead(char *filePath, double *point) {
     }
   }
   fclose(fp);
-  printf("[success] read dataset.\n");
+  printf("[success] read dataset.\n\n");
 }
 
 
