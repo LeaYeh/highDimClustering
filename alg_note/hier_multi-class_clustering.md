@@ -15,6 +15,20 @@ how to judge whether a Cut C is dense or not
   2. 
 -->
 
+> Step 1. Read in the input data set ***H***. Construct a binary tree ***T***, the root node witch represents 
+> the set ***H***.
+
+> Step 2. For each non-grounded leaf ***U***, apply the analytical two-class clustering tool to produce
+> a cut C that split ***U*** into two subset ***UA*** and ***UB***.
+
+> Step 3. For every node ***W***, when too many ******C*******desen* happened then withdraw those dense cuts
+> and discard all nodes descending from the node ***W*** and mark a grounded sign on the node ***W***.
+
+> Step 4. If there are too many leaves (eg. more than 64 leaves), then stop.
+> *(but this condition is rarely happen)*
+
+> Step 5. If some leaves of tree are still not grounded, go to Stop 2.
+
 #### Parse 2: Merge ####
 
 #### Some Experiment Results ####
