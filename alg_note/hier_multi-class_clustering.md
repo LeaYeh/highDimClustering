@@ -18,6 +18,7 @@ how to judge whether a Cut C is dense or not
 #### Parse 2: Merge ####
 
 #### Some Experiment Results ####
+![image of results](images/result.png)
 
 #### Reference ####
 
