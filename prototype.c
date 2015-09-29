@@ -8,7 +8,7 @@ double pa, pb;
 double avg_x, avg_y, avg_z;
 double avg_xy, avg_xz, avg_yz, avg_xyz;
 double *centroid_a, *centroid_b;
-
+int *box;
 void DatasetRead(char *filePath, double *point);
 void PrintDataPoint(double *points);
 void setInit_3d(double *points);
@@ -17,7 +17,7 @@ int method_1(void);
 int method_2(void);
 int main (int argc, char *argv[]) {
   // filePath need able to user input
-  char *filePath = "dataset/sipu_dataset/parse_dim3.txt";
+  char *filePath = "dataset/py/data_3d2cxn.txt";
   double *points;
 
   if (argc < 3) {
@@ -29,6 +29,8 @@ int main (int argc, char *argv[]) {
     points = (double *)malloc(sizeof(double) * dataPointSize * dataDimension);
     centroid_a = (double *)malloc(sizeof(double) * dataDimension);
     centroid_b = (double *)malloc(sizeof(double) * dataDimension);
+    box = (int *)malloc(sizeof(int) * pow(2, dataDimension));
+    memset(box, 0, sizeof(int) * pow(2, dataDimension));
     printf("dataPointSize = %d, dataDimension = %d\n", dataPointSize, dataDimension);
   } /*else if (!argv[1] || argv[2] < 3) {
     printf("point_size can not be 0, and dimension must >= 3\n");
@@ -51,6 +53,25 @@ void PrintDataPoint(double *points) {
   }
   printf("[finish] print dataset.\n\n");
 }
+int findQuadrant(double *base_point, int dim) {
+  int i;
+  int res = 0;
+
+  // +x, -y, -z -> 1, 0, 0
+  for (i = dim-1; i >= 0; i--) {
+//printf("base_point[%d] = %lf\n", i, base_point[i]);
+    // if point lay on axis-plane, do not vote any box
+    if (base_point[i] == 0) {
+      return -1;
+    }
+    res  = res << 1;
+    if (base_point[i] > 0) {
+      res |= 1;
+    } 
+//printf("res = %d\n", res);
+  }
+  return res;
+}
 void setInit_3d(double *points) {
   double sum_x = 0, sum_y = 0, sum_z = 0;
   double sum_xy = 0, sum_xz = 0, sum_yz = 0;
@@ -62,25 +83,31 @@ void setInit_3d(double *points) {
       sum_x += points[i];
       sum_y += points[i+1];
       sum_z += points[i+2];
-      //sum_xy += points[i] * points[i+1];
-      //sum_xz += points[i] * points[i+2];
-      //sum_yz += points[i+1] * points[i+2];
-      //sum_xyz += points[i] * points[i+1] * points[i+2];
     //}
   }
   avg_x = (double)(sum_x / dataPointSize);
   avg_y = sum_y / dataPointSize;
   avg_z = sum_z / dataPointSize;
+  // replace all points to origin
   for (i = 0; i < dataPointSize*dataDimension; i += dataDimension) {
     points[i] -= avg_x;
     points[i+1] -= avg_y;
     points[i+2] -= avg_z;
   }
+  // init necessary value and voting to find majory boxes
+  int quadrant;
   for (i = 0; i < dataPointSize*dataDimension; i += dataDimension) {
-    sum_xy += points[i] * points[i+1];
-    sum_xz += points[i] * points[i+2];
-    sum_yz += points[i+1] * points[i+2];
-    sum_xyz += points[i] * points[i+1] * points[i+2];
+    sum_xy += abs(points[i] * points[i+1]);
+    sum_xz += abs(points[i] * points[i+2]);
+    sum_yz += abs(points[i+1] * points[i+2]);
+    sum_xyz += abs(points[i] * points[i+1] * points[i+2]);
+    if ((quadrant = findQuadrant(points+i, dataDimension)) >= 0) {
+      box[quadrant]++;
+    }  
+  }
+  printf("\n----------\n");
+  for (i = 0; i < pow(2, dataDimension); i++) {
+    printf("box[%d] = %d\n", i, box[i]);
   }
   avg_x = avg_y = avg_z = 0;
   avg_xy = sum_xy / dataPointSize;
@@ -101,9 +128,15 @@ int method_1() {
   abs_avg_xz = abs(avg_xz);
   abs_avg_yz = abs(avg_yz);
   abs_avg_xyz = abs(avg_xyz);
-  delta = abs_avg_xyz / abs_avg_xy * abs_avg_xyz / abs_avg_xz / abs_avg_yz;
+  delta = (double)(abs_avg_xyz / abs_avg_xy * abs_avg_xyz / abs_avg_xz / abs_avg_yz);
   if (delta < 1) {
-    printf("method 1: Have no solution.\n\n");
+    printf("==================================================\n");
+    printf("method 1: [Have no solution] delta = %lf < 1\n\n", delta);
+    printf("abs_avg_xyz / abs_avg_xy  = %.2lf\n", abs_avg_xyz / abs_avg_xy);
+    printf("* abs_avg_xyz = %lf\n", abs_avg_xyz / abs_avg_xy * abs_avg_xyz);
+    printf("/ abs_avg_xz = %lf\n", abs_avg_xyz / abs_avg_xy * abs_avg_xyz / abs_avg_xz);
+    printf("/ abs_avg_yz = %lf\n", abs_avg_xyz / abs_avg_xy * abs_avg_xyz / abs_avg_xz / abs_avg_yz);
+    printf("==================================================\n");
     return -1;
   }
   pa = 0.5 + 0.5 * sqrt(sqrt(delta*delta + 8*delta) - delta - 2);
@@ -125,7 +158,7 @@ int method_2() {
 
   if (avg_xy * avg_xz * avg_yz < 0) {
     // have no solution
-    printf("method 2: Have no solution.\n\n");
+    printf("method 2: [Have no solution] avg_xy * avg_xz * avg_yz = %.5lf < 0\n\n", avg_xy * avg_xz * avg_yz);
     return -1;
   }
   tmp = 4 * avg_xy / avg_xyz * avg_xz * avg_yz / avg_xyz;
@@ -143,14 +176,15 @@ void DatasetRead(char *filePath, double *point) {
   int i;
 
   fp = fopen(filePath,"r");
-  //point = (double *)malloc(sizeof(double) * dataPointSize * dataDimension);
+  if (fp == NULL) {
+    printf("can not find filepath.\n");
+    return;
+  }
   while (fgets(input, MAX_DIM*20, fp)) {
     line = strdup(input);
     while (pch = strsep(&line, " ,;\n")) {
       if (strlen(pch) > 0) {
-        //printf("%.2lf\n", atof(pch));
-        //point[data_index++] = atof(pch);
-        point[data_index++] = atof(pch);
+        point[data_index++] = strtod(pch, NULL);//atod(pch);
         if (data_index == dataPointSize*dataDimension) {
           fclose(fp);
           printf("[success] read dataset.\n");
