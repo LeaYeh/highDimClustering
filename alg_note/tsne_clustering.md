@@ -31,7 +31,7 @@ space and the embedded space will be minimized by gradient descent.
 
 -----
 
-### Alg ###
+### Algorithm ###
 
 * 目標是要在低維度(2D or 3D)中建立一個盡可能保留高維度中兩兩點之間關連性的 map。
 首先先定義高維度空間 local structure 中點兩點間的相似性
