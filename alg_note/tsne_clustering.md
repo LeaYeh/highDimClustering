@@ -37,7 +37,9 @@ space and the embedded space will be minimized by gradient descent.
 首先先定義高維度空間 local structure 中點兩點間的相似性
   * 高維中以高斯分布建立機率模型
   * 其中 σ(i) 為高斯分布的 bandwidth，由預先設定好的 perplexity(設定 local 
-structure 的 objects 數) 間接決定  
+structure 的 objects 數) 間接決定
+  * 為了讓每個 Xi 都能有一定程度的貢獻，以及對稱性，實際運算多考慮條件機率  
+![pij pji](images/pij_pji.png)  
 ![pij](images/pij.png)  
 
 * 以亂數或是 PCA 預先降維至目標維度(e.g. 2D)
