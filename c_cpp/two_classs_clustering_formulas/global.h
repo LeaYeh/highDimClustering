@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 int dataPointSize = 0, dataDimension = 0;
 #define MAX_DIM 1024 // allow to have up to 1024 dimension
