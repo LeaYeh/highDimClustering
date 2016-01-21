@@ -9,7 +9,6 @@ these remedies in the high-dimensional clustering setting.
 * **curse of dimensionality**: when the dimensionality increases, the volume of 
 the space increases so fast that the available data become sparse. This sparsity 
 is problematic for any method that requires statistical significance.
-
 > Multiple dimensions are hard to think in, impossible to visualize, and, due to 
 the exponential growth of the number of possible values with each dimension, 
 complete enumeration of all subspaces becomes intractable with increasing 

@@ -1,8 +1,21 @@
+# 忽略臨時測試 code
 *test*
-.*
-*.todo
 test/
-*.swp
-*.o
 test.c
+
+# todo list
+*.todo
+
+# temporarily files
+*.swp*
+*.o
+
+# python
 *.ipynb
+*.py[co]
+
+# 忽略圖片 or dataset
+*.png
+*.bmp
+*.txt
+
