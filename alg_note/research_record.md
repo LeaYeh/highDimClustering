@@ -36,8 +36,10 @@ the clustering can then be performed.
 
 
 ## Research Direction ##
+- [ ] if we use some dimension reduction technique to get low-dim data, can we find 
+what attributes constitute(or each attribute's rate) in the new coordinate.
 
-### Parallel Processing ###
+- [ ] design a system to conquer high-dim data
 
 -----
 
