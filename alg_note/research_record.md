@@ -15,6 +15,9 @@ complete enumeration of all subspaces becomes intractable with increasing
 dimensionality. 
 
 * not only hard to compute but hard to find relationship:  
+> traditional similarity measures as used in conventional clustering algorithms 
+are usually not meaningful
+
 > The concept of distance becomes less precise as the number of dimensions grows, 
 since the distance between any two points in a given dataset converges. The 
 discrimination of the nearest and farthest point in particular becomes meaningless.
@@ -24,6 +27,12 @@ different subspaces, so a global filtering of attributes is not sufficient.
 > A cluster is intended to group objects that are related, based on observations 
 of their attribute's values. However, given a large number of attributes some of 
 the attributes will usually not be meaningful for a given cluster. 
+
+**Probles in feature seletion and dimension reduction**  
+Feature selection or dimensionality reduction techniques are global in the 
+following sense:  
+> They generally compute only one subspace of the original data space in which 
+the clustering can then be performed.
 
 
 ## Research Direction ##
