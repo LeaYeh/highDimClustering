@@ -35,6 +35,30 @@ following sense:
 the clustering can then be performed.
 
 
+**Notes about famous clustering methods**  
+
+* `DBSCAN` (1996): 藉由預先給定的 r(半徑) 和 MinPts(密度) 將每個 datapoint 標記為 `核心點` `邊緣點` `雜訊` 
+刪除雜訊後再將所有在彼此半徑內的`核心點`化為一群, 再將`邊緣點`分配給各群
+  * `核心點`: 半徑內密度夠高的點
+  * `邊緣點`: 在`核心點`半徑內的點
+  * `雜訊`: 兩者皆非的點
+  * pros: 不用預先給 K
+  * cons: 不適用 high-dim
+    
+* `CLTree` (2000): 將原生 dataset 想像成 class X, 然後再加入 N 個 uniform distribution 
+假想點作為 class Y. 如此一來就把問題轉換為 classification problem. 再藉由 Decision tree 將
+兩者區分開來。  
+The reason that this technique works is that if there are clusters in the data, 
+the data points cannot be uniformly distributed in the entire space.
+
+  * pros:
+    * without making any prior assumptions or using any input parameters
+    * find clusters in the full dimension space as well as in any subspaces
+    * find the empty (sparse) regions
+    * It deals with outliers effectively
+  * cons:
+    * N 的個數對結果影響很大
+    * 如果 block 之間沒有直接相連(touch)的話，不會被 merge
 ## Research Direction ##
 - [ ] if we use some dimension reduction technique to get low-dim data, can we find 
 what attributes constitute(or each attribute's rate) in the new coordinate.
