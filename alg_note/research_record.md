@@ -7,8 +7,9 @@ transformation, but it is a challenge to develop effective instantiations of
 these remedies in the high-dimensional clustering setting.  
 
 * **curse of dimensionality**: when the dimensionality increases, the volume of 
-the space increases so fast that the available data become sparse. This sparsity 
+the space increases so fast that the available data become **sparse**. This sparsity 
 is problematic for any method that requires statistical significance.
+> Conceptually our data is “lost in space” as we go to higher dimensions.
 > Multiple dimensions are hard to think in, impossible to visualize, and, due to 
 the exponential growth of the number of possible values with each dimension, 
 complete enumeration of all subspaces becomes intractable with increasing 
@@ -17,6 +18,9 @@ dimensionality.
 * not only hard to compute but hard to find relationship:  
 > traditional similarity measures as used in conventional clustering algorithms 
 are usually not meaningful
+> For example, as the number of dimensions tend to infinity the distance between 
+any two points in the dataset converges. This means the maximum distance and minimum 
+distance between any two points of your dataset will be the same.
 
 > The concept of distance becomes less precise as the number of dimensions grows, 
 since the distance between any two points in a given dataset converges. The 
@@ -35,6 +39,21 @@ following sense:
 the clustering can then be performed.
 
 
+## Notes ##
+
+* top-down and bottom-up approaches
+  * top-down: anticipate cluster members and then determines the subspace of each cluster
+  * bottom-up: anticipate the subspaces of the clusters and then determines the cluster members
+    * 先從所有 1-dim space 開始找, 再嘗試所有排列組合,計算最有可能的 space
+
+**Overview clustering methods in high-dim**  
+
+* Projected Clustering Algorithms: aim at finding a unique assignment of points 
+to subspace clusters.
+  * PreDeCon (2004)
+  * CLTree (2000)
+
+
 **Notes about famous clustering methods**  
 
 * `DBSCAN` (1996): 藉由預先給定的 r(半徑) 和 MinPts(密度) 將每個 datapoint 標記為 `核心點` `邊緣點` `雜訊` 
@@ -50,7 +69,6 @@ the clustering can then be performed.
 兩者區分開來。  
 The reason that this technique works is that if there are clusters in the data, 
 the data points cannot be uniformly distributed in the entire space.
-
   * pros:
     * without making any prior assumptions or using any input parameters
     * find clusters in the full dimension space as well as in any subspaces
@@ -59,6 +77,7 @@ the data points cannot be uniformly distributed in the entire space.
   * cons:
     * N 的個數對結果影響很大
     * 如果 block 之間沒有直接相連(touch)的話，不會被 merge
+
 ## Research Direction ##
 - [ ] if we use some dimension reduction technique to get low-dim data, can we find 
 what attributes constitute(or each attribute's rate) in the new coordinate.
