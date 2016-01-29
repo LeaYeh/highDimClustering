@@ -67,11 +67,6 @@ what attributes constitute(or each attribute's rate) in the new coordinate.
 
 -----
 
-### dimension reduction and focus in specify data ###
-
-
-
-
 ## Related Work ##
 
 ### PCA ###
@@ -160,12 +155,6 @@ Pattern-Based Clustering, and Correlation Clustering
 * http://stats.stackexchange.com/questions/176672/what-is-meant-by-pca-preserving-only-large-pairwise-distances
 * [scikit-learn](http://scikit-learn.org/stable/modules/clustering.html#clustering)
 * [Neural Information Processing Systems](https://nips.cca)
-
-## Footnote ##
-
-- CF = Cluster Forest
-- RF = Random Forest
-- 
 
 <!-- [problem]
 how to decide # of sub tree?
