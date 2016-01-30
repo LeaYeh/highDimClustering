@@ -84,6 +84,18 @@ what attributes constitute(or each attribute's rate) in the new coordinate.
 
 - [ ] design a system to conquer high-dim data
 
+- [ ] 現在的方法(model)大多都只考慮點與點兩兩之間的關係(pair)，但以證明考慮越多點越
+能描述模型。  
+e.g. t-sne 中使用 t-student/gaussian kernel, 但他在計算相似度的時候只考慮 Xi, Xj 之間
+的關係而非考慮多個點。  
+![pij](images/pij.png)  
+
+目前有人開始引入 Jensen-Shannon Divergence 計算相似度(原通訊領域技術)
+-> base idea: 亦即由 data 本身決定變量  
+
+[Jensen-Shannon-link1](http://thelightroad.blogspot.tw/2012/04/jensen-shannon-divergence.html)
+
+
 -----
 
 ## Related Work ##
