@@ -78,6 +78,17 @@ the data points cannot be uniformly distributed in the entire space.
     * N 的個數對結果影響很大
     * 如果 block 之間沒有直接相連(touch)的話，不會被 merge
 
+* `CLIQUE` (1998): 先將所有的維度都劃分成等量的區間(grid basede unit)，然後依據 
+user input i(是否為 dense 的 threshold) 將 >= i 的 `unit` 標記為 `dense`，同時相鄰
+的 `dense` merge 成 `cluster`，如果 k-1 dim 延伸在 k dim 上的交集也大於 threshold 
+(i) 的話，那麼 k space 亦是 candidate subspace。  
+> notice: 如果 k space 不滿足 candidate space 的條件，那麼 k+1 亦不為之。
+
+![CLIQUE](images/CULQUE.png)  
+
+* `SUBCLU` (2004): base on `CULQUE` 但是用 `DBSCAN` 決定哪些 `dense` 需要被 merge 
+成 `cluster`
+
 ## Research Direction ##
 - [ ] if we use some dimension reduction technique to get low-dim data, can we find 
 what attributes constitute(or each attribute's rate) in the new coordinate.
