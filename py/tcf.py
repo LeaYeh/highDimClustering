@@ -88,8 +88,8 @@ def tcf(datapoints, table=None, method=3):
   val = np.sqrt((pb / pa) * r2list)
 
   # offset to origin 
-  centroid_a = _boxnum2coeff(pri_num, dim) * (val + center)
-  centroid_b = _boxnum2coeff(sec_num, dim) * (val + center)
+  centroid_a = _boxnum2coeff(pri_num, dim) * val + center
+  centroid_b = _boxnum2coeff(sec_num, dim) * val + center
 
   print(datapoints)
   print(centroid_a)
@@ -99,13 +99,20 @@ def tcf(datapoints, table=None, method=3):
 
 
 if __name__ == '__main__':
-  points, label = utl.gaussian_data_generator(dim=2, cls=2, objs_size=[2, 2])
+  points, label = utl.gaussian_data_generator(dim=2, cls=2, objs_size=[200, 100])
 
-  # for i in np.unique(label):
-  #   fetch_cluster = points[label == i]
-  #   plt.scatter(fetch_cluster[:, 0], fetch_cluster[:, 1], color=np.random.rand(3));
+  print(label)
+  for i in np.unique(label):
+    fetch_cluster = points[label == i]
+    plt.scatter(fetch_cluster[:, 0], fetch_cluster[:, 1], color=np.random.rand(3));
 
   table = build_table(range(9, 12))
-  tcf(points, table)
+  ca, cb = tcf(points, table)
 
+  ca = ca.astype(np.int)
+  cb = cb.astype(np.int)
 
+  plt.plot(ca[0], ca[1], "ro", ms=20)
+  plt.plot(cb[0], cb[1], "go", ms=20)
+
+  plt.show()
