@@ -7,6 +7,20 @@ import matplotlib.pyplot as plt
 from pprint import pprint
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
+import time                                                                                                                                           
+
+                                                                                
+def log_msg(func):                                                              
+  def with_logging(*arg, **kwargs):                                             
+    print(func.__name__ + "...", end="", flush=True)                            
+    t0 = time.time()                                                            
+    res = func(*arg, **kwargs)                                                  
+    t1 = time.time()                                                            
+    print("done  %.2g sec" % (t1 - t0))                                         
+                                                                                
+    return res                                                                  
+                                                                                
+  return with_logging
 
 
 def gaussian_data_generator(dim=4, cls=5, objs_size=None, cov=None):
@@ -20,8 +34,10 @@ def gaussian_data_generator(dim=4, cls=5, objs_size=None, cov=None):
   if objs_size is None:
     # random each cluster size; min=100, max=1000
     objs_size = [random.randrange(100, 1000, 50) for _ in range(cls)]
+    print("random object size = ", objs_size)
 
   means = [[random.randrange(0, 500, 50) for __ in range(dim)] for _ in range(cls)] 
+  print("object's mean = ", means)
 
   point = []
   label = []
@@ -39,6 +55,14 @@ def gaussian_data_generator(dim=4, cls=5, objs_size=None, cov=None):
   return np.array(point), np.array(label)
 
 
+def graph(coeff, x_range):
+  x = np.array(x_range)
+  y = (-coeff[0] * x - coeff[2]) / coeff[1]
+  plt.plot(x, y, 'ro')
+
+  return
+
+
 if __name__ == '__main__':
   point, label = gaussian_data_generator()
   pprint(point)
@@ -48,9 +72,6 @@ if __name__ == '__main__':
     fetch_cluster = point[label == i]
     plt.scatter(fetch_cluster[:, 0], fetch_cluster[:, 1], color=np.random.rand(3));
 
+
+
   plt.show()
-
-
-
-
-
