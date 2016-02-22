@@ -6,7 +6,7 @@ plt = utl.plt
 input:  datapoints
 output: a boundary/hyperplane, split two cluster
 """
-def rwm(datapoints):
+def _rwm(datapoints):
   size, dim = datapoints.shape
   center = np.mean(datapoints, axis=0)
 
@@ -17,6 +17,27 @@ def rwm(datapoints):
   coeff = np.append(v, sum(-v * w))
 
   return coeff
+
+
+"""
+input:  datapoints(numpy.ndarray)
+output: list
+"""
+def rwm_cut(datapoints):
+  size, dim = datapoints.shape
+  c_left = []
+  c_right = []
+
+  coeff = _rwm(datapoints)
+
+  for point in datapoints:
+    if sum(point * coeff[:-1]) + coeff[-1] >= 0:
+      c_right.append(point)
+    else:
+      c_left.append(point)
+
+  return np.array(c_left, np.float), np.array(c_right, np.float)
+
 
 
 if __name__ == '__main__':
