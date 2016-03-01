@@ -8,8 +8,36 @@ from pprint import pprint
 import matplotlib.cm as cmx
 import matplotlib.colors as colors
 import time                                                                                                                                           
+import math
+import operator
 
-                                                                                
+
+def euclideanDistance(instance1, instance2):
+  dim = len(instance1)
+  distance = 0
+
+
+  for x in range(dim):
+    distance += pow((instance1[x] - instance2[x]), 2)
+
+  return math.sqrt(distance)
+
+
+def getKthNeighbor(point, datasets, k):
+  distances = []
+
+  for i in range(len(datasets)):
+    dist = euclideanDistance(point, datasets[i])
+    distances.append((datasets[i], dist))
+
+  distances.sort(key=operator.itemgetter(1))
+
+
+  print(distances)
+
+  return distances[k]
+
+
 def log_msg(func):                                                              
   def with_logging(*arg, **kwargs):                                             
     print(func.__name__ + "...", end="", flush=True)                            
