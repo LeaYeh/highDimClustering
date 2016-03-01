@@ -12,6 +12,17 @@ import math
 import operator
 
 
+def stats_accuracy(y_pred, y_true):
+  n = len(y_pred)
+  tp = 0
+
+  for i in range(n):
+    if y_pred[i] is y_true[i]:
+      tp++
+
+  return tp / n
+
+
 def euclideanDistance(instance1, instance2):
   dim = len(instance1)
   distance = 0
