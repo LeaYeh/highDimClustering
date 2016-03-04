@@ -43,9 +43,7 @@ def getKthNeighbor(point, datasets, k):
 
   distances.sort(key=operator.itemgetter(1))
 
-
-  print(distances)
-
+  # output kth point and distance
   return distances[k]
 
 
@@ -62,21 +60,21 @@ def log_msg(func):
   return with_logging
 
 
-def gaussian_data_generator(dim=4, cls=5, objs_size=None, cov=None):
+def gaussian_data_generator(dim=2, cls=5, objs_size=None, cov=None):
 
   """
   init necessary parameters
   """
   if cov is None:
-    cov = [300 for _ in range(cls)]
+    cov = [random.randrange(100, 500, 50) for _ in range(cls)]
 
   if objs_size is None:
     # random each cluster size; min=100, max=1000
     objs_size = [random.randrange(100, 1000, 50) for _ in range(cls)]
-    print("random object size = ", objs_size)
+    # print("random object size = ", objs_size)
 
   means = [[random.randrange(0, 500, 50) for __ in range(dim)] for _ in range(cls)] 
-  print("object's mean = ", means)
+  # print("object's mean = ", means)
 
   point = []
   label = []
@@ -103,14 +101,13 @@ def graph(coeff, x_range):
 
 
 if __name__ == '__main__':
-  point, label = gaussian_data_generator()
-  pprint(point)
-  p = sum(point)
+  points, label = gaussian_data_generator(objs_size=[5, 5, 5], cls=3)
+  print(points)
+  print(standardize_data(points))
 
   for i in np.unique(label):
-    fetch_cluster = point[label == i]
+    fetch_cluster = points[label == i]
     plt.scatter(fetch_cluster[:, 0], fetch_cluster[:, 1], color=np.random.rand(3));
-
 
 
   plt.show()
