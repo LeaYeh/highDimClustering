@@ -26,7 +26,7 @@ def stats_accuracy(y_pred, y_true):
 
   for i in range(n):
     if y_pred[i] is y_true[i]:
-      tp++
+      tp += 1
 
   return tp / n
 
