@@ -37,12 +37,16 @@ class Tree:
     if method == 'rwm':
       cluster1, cluster2 = rwm.rwm_cut(self.datapoints)
 
-    # get each cluster size
-    size1 = len(cluster1)
-    size2 = len(cluster2)
+    # create node by split result
+    self.left = Tree(self, cluster1)
+    self.right = Tree(self, cluster2)
 
-    m1 = np.sum(cluster1, axis=0)
-    m2 = np.sum(cluster2, axis=0)
+    # get each cluster size
+    self.left.size  = len(cluster1)
+    self.right.size = len(cluster2)
+
+    m1 = np.mean(cluster1, axis=0)
+    m2 = np.mean(cluster2, axis=0)
 
     # get Kth dist as standard deviation
     kth_p1, s1 = utl.getKthNeighbor(m1, cluster1, 7)
@@ -57,21 +61,13 @@ class Tree:
     # z >= 2.58 means two cluster are very different
     # z >= 1.96 means two cluster are quite different
     for i, j in zip(m1, m2):
-      z = (i - j) / math.sqrt(v1 / size1 + v2 / size2)
-      print(z)
+      z = (i - j) / math.sqrt(v1 / self.left.size + v2 / self.right.size)
+      print("|z| = ", abs(z))
       if abs(z) < 1.96:
-        if self.parent:
-          self.bad_cut = self.parent.bad_cut + 1
-        else:
-          self.bad_cut += 1
+        self.left.bad_cut = self.bad_cut + 1
+        self.right.bad_cut = self.bad_cut + 1
+        print("split result bad_cut = ", self.left.bad_cut)
         break
-
-    # var are similar -> similar dense -> may be a bad cut
-    # if abs(sigma1 - sigma2) < self.VAR_THRESHOUD:
-    self.left = Tree(self, cluster1)
-    self.right = Tree(self, cluster2)
-    self.left.size = size1
-    self.right.size = size2
 
     return
 
@@ -82,13 +78,15 @@ class Tree:
 
 def _ms2c(node, method):
   print("level = ", node.level)
-
+  print("[bad]: ", node.bad_cut)
   # return condition:
   #   current node's bad cut times > BAD_CUT_TOLERANCE
   #                  size < 30 (Central Limit Theorem)
   if node.bad_cut >= node.BAD_CUT_TOLERANCE:
+    print("return: bad cut")
     return
   if node.size < 30:
+    print("return: 30")
     return
 
   # split current node
@@ -112,6 +110,8 @@ def paint_tree(root_node):
   if dim != 2:
     msg = "datapoints' dimension is not porperty, only can handle 2 dimension data."
     raise ValueError(msg)
+
+  
   
   return
 
@@ -133,7 +133,7 @@ def ms2c(datapoints, method='rwm', n=None):
 
 
 if __name__ == '__main__':
-  points, label = utl.gaussian_data_generator(dim=30, objs_size=[100, 100], cls=2)
+  points, label = utl.gaussian_data_generator(dim=40, objs_size=[100, 100], cls=2)
 
   print(len(points[0]))
   ms2c(points)
