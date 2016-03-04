@@ -108,6 +108,15 @@ def graph(coeff, x_range):
   return
 
 
+def draw_2cluster(cluster1, cluster2):
+  plt.clf()
+  plt.plot(cluster1[:, 0], cluster1[:, 1], 'ro');
+  plt.plot(cluster2[:, 0], cluster2[:, 1], 'bx');
+  plt.show()
+
+  return
+
+
 if __name__ == '__main__':
   points, label = gaussian_data_generator(objs_size=[5, 5, 5], cls=3)
   print(points)
