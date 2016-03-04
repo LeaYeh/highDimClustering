@@ -12,6 +12,14 @@ import math
 import operator
 
 
+def standardize_data(datasets):
+  size = len(datasets)
+  center = np.mean(datasets, axis=0)
+  print(center)
+
+  return datasets - center
+
+
 def stats_accuracy(y_pred, y_true):
   n = len(y_pred)
   tp = 0
