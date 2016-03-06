@@ -11,7 +11,8 @@ input:
 output: 
 """
 class Tree:
-  BAD_CUT_TOLERANCE = 3
+  BAD_CUT_TOLERANCE = 1
+  cut_count = 0
 
   def __init__(self, parent, datapoints):
     self.datapoints = datapoints
@@ -21,8 +22,8 @@ class Tree:
     self.right = None
     self.parent = parent
     self.bad_cut = 0
+    self.dense = None
 
-    # set up level to switch method
     if parent is None:
       self.level = 0
     else:
@@ -45,29 +46,45 @@ class Tree:
     self.left.size  = len(cluster1)
     self.right.size = len(cluster2)
 
+    """
+    目前唯一中止條件
+    """
+    # if any node < 30, termination condition
+    if self.left.size < 30 or self.right.size < 30:
+      self.left.bad_cut = self.BAD_CUT_TOLERANCE
+      self.right.bad_cut = self.BAD_CUT_TOLERANCE
+      return
+
     m1 = np.mean(cluster1, axis=0)
     m2 = np.mean(cluster2, axis=0)
+
 
     # get Kth dist as standard deviation
     kth_p1, s1 = utl.getKthNeighbor(m1, cluster1, 7)
     kth_p2, s2 = utl.getKthNeighbor(m2, cluster2, 7)
 
-    v1 = s1 ** self.dim
-    v2 = s2 ** self.dim
+    # v1 = s1 ** self.dim
+    # v2 = s2 ** self.dim
 
-    # do `z-test`, to test two clusters whether have enough differential
-    # intersection test from mean vector, if any test faild, z-test faild
-    # z = (m1 - m2) / math.sqrt(v1 / size1 + v2 / size2)
-    # z >= 2.58 means two cluster are very different
-    # z >= 1.96 means two cluster are quite different
-    for i, j in zip(m1, m2):
-      z = (i - j) / math.sqrt(v1 / self.left.size + v2 / self.right.size)
-      print("|z| = ", abs(z))
-      if abs(z) < 1.96:
-        self.left.bad_cut = self.bad_cut + 1
-        self.right.bad_cut = self.bad_cut + 1
-        print("split result bad_cut = ", self.left.bad_cut)
-        break
+    """
+    do `z-test`, to test two clusters whether have enough differential mean,
+      但是 z-rest 永遠都會過，因為 cut 完後 mean, std 都是從限制範圍內(群內)取的
+      所以 mean 不可能會一樣
+    intersection test from mean vector, if any test success, z-test success
+    z = (m1 - m2) / math.sqrt(v1 / size1 + v2 / size2)
+    z >= 2.58 means two cluster are very different
+    z >= 1.96 means two cluster are quite different
+    """
+    # self.left.bad_cut = self.bad_cut + 1
+    # self.right.bad_cut = self.bad_cut + 1
+    # for i, j in zip(m1, m2):
+    #   z = (i - j) / math.sqrt(v1 / self.left.size + v2 / self.right.size)
+    #   # print("|z| = ", abs(z))
+    #   if abs(z) >= 1.96:
+    #     self.left.bad_cut = 0
+    #     self.right.bad_cut = 0
+    #     print("z-test success!")
+    #     break
 
     return
 
@@ -77,8 +94,9 @@ class Tree:
 
 
 def _ms2c(node, method):
-  print("level = ", node.level)
-  print("[bad]: ", node.bad_cut)
+  # print("level = ", node.level)
+  # print("[bad]: ", node.bad_cut)
+
   # return condition:
   #   current node's bad cut times > BAD_CUT_TOLERANCE
   #                  size < 30 (Central Limit Theorem)
@@ -104,15 +122,29 @@ def _ms2c(node, method):
   return
 
 
-def paint_tree(root_node):
+def paint_tree(current_node, root_node):
   dim = len(root_node.datapoints[0])
 
   if dim != 2:
     msg = "datapoints' dimension is not porperty, only can handle 2 dimension data."
     raise ValueError(msg)
+  if root_node is None:
+    mag = "this tree is empty."
+    raise ValueError(msg)
 
-  
-  
+  # termination condition
+  if current_node.left is None:
+    return
+
+  # paint all datapoints with color:black
+  plt.plot(root_node.datapoints[:, 0], root_node.datapoints[:, 1], 'ko')
+  # paint current clustering node with color:red/blue
+  utl.draw_2cluster(current_node.left.datapoints, current_node.right.datapoints)
+  plt.show()
+
+  paint_tree(current_node.left, root_node)
+  paint_tree(current_node.right, root_node)
+
   return
 
 
@@ -129,14 +161,17 @@ def ms2c(datapoints, method='rwm', n=None):
   
   _ms2c(root, method)
 
-  return
+  return root
 
 
 if __name__ == '__main__':
-  points, label = utl.gaussian_data_generator(dim=40, objs_size=[100, 100], cls=2)
+  points, label = utl.gaussian_data_generator(dim=2, cls=5)
 
-  print(len(points[0]))
-  ms2c(points)
+  # c1, c2 = rwm.rwm_cut(points)
+  # utl.draw_2cluster(c1, c2)
+  # print(len(points[0]))
+  ms_tree = ms2c(points)
+  paint_tree(ms_tree, ms_tree)
 
 
 
