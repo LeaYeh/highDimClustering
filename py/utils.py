@@ -113,6 +113,13 @@ def draw_2cluster(cluster1, cluster2):
   plt.plot(cluster1[:, 0], cluster1[:, 1], 'ro');
   plt.plot(cluster2[:, 0], cluster2[:, 1], 'bx');
   plt.show()
+def read_from_text(name):
+  return np.loadtxt("dataset_text/" + name, delimiter=',')
+
+
+def write_to_text(name, points, label):
+  data = np.append(points, label.reshape(len(label), 1), axis=1)
+  np.savetxt("dataset_text/" + name, data, fmt='%10.2f', delimiter=' ')
 
   return
 
