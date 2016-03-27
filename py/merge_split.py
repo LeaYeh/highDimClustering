@@ -6,17 +6,6 @@ plt = utl.plt
 math = utl.math
 
 
-def get_clusters(node, clusters):
-  if node.left is None or node.right is None:
-    clusters.append(node.datapoints)
-    return
-
-  get_clusters(node.left, clusters)
-  get_clusters(node.right, clusters)
-
-  return
-
-
 """
 input: 
 output: 
@@ -38,7 +27,7 @@ class Tree:
     self.bad_cut = 0
     self.grounded = False
     self.active = True
-    self.bad_cut_record = None
+    self.in_bound_record = []
 
     if parent is None:
       self.level = 0
@@ -48,6 +37,8 @@ class Tree:
 
   # split current node into two property cluster by method
   def split(self, method):
+    print("in split func")
+
     if method not in ["rwm", "tcf"]:
       msg = "'method' must be 'rwm' or 'tcf'"
       raise ValueError(msg)
@@ -57,66 +48,110 @@ class Tree:
 
     # before split, check whether continue happened BAD_CUT_TOLERANCE bad cut
     # withdraw those bad cuts and mark grounded sign on first parent
+    print("self node = {}".format(self))
+    print("self.bad_cut = {}, self.level = {}".format(self.bad_cut, self.level))
+
     if self.bad_cut >= Tree.BAD_CUT_TOLERANCE:
+      node = self
       for i in range(Tree.BAD_CUT_TOLERANCE):
-        node = self.parent
+        node = node.parent
         node.left.active = False
         node.right.active = False
+        print("set false: {}, {}".format(node.left, node.right))
       node.grounded = True
+      print("set grounded: {}".format(node))
       return
 
+    if self.size < 30:
+      self.grounded = True
+      print("[node.size < 30] set grounded: {}".format(self))
+      return
+
+
     if method == 'rwm':
-      cluster1, cluster2, in_boundary = rwm.rwm_cut(self.datapoints)
+      cluster1, cluster2, in_boundary, coeff = rwm.rwm_cut(self.datapoints)
       bound_size = len(in_boundary[0]) + len(in_boundary[1])
+      # if self.in_bound_record:
+      #   rec_cut_id = self.in_bound_record[0]
+      #   rec_points = self.in_bound_record[1]
+      #   rec_color  = self.in_bound_record[2]
+      #   b_left, b_right = rwm.cut_by_coeff(rec_points, coeff)
+      #   self.left.in_bound_record.append((rec_cut_id, b_left, rec_color))
+      #   self.right.in_bound_record.append((rec_cut_id, b_right, rec_color))
 
       # create node by split result
       self.right = Tree(self, cluster1)
       self.right.size = len(cluster1)
-      self.right.bad_cut_record = (Tree.total_cut, in_boundary[0])
       self.left = Tree(self, cluster2)
       self.left.size = len(cluster2)
-      self.left.bad_cut_record = (Tree.total_cut, in_boundary[1])
+
+      # if bound_size > 0:
+      #   self.right.in_bound_record.append((Tree.total_cut, in_boundary[0], '+'))
+      #   self.left.in_bound_record.append((Tree.total_cut, in_boundary[1], '-'))
 
       if bound_size >= (self.size // 5):
         self.left.bad_cut = self.bad_cut + 1
         self.right.bad_cut = self.bad_cut + 1
 
+      print("after split, child.bad_cut = {}".format(self.left.bad_cut))
       Tree.total_cut += 1
-
-      print("total size = ", self.size, "bound_size/MAX_POINT_IN_BOUND = {} / {}".format(bound_size, (self.size // 5)))
-      print('bad_cut = ', self.left.bad_cut)
 
     return
 
+
+  def get_grounded_node(node, grounded_nodes):
+    if node is None:
+      return
+    if node.grounded:
+      grounded_nodes.append(node)
+      return
+    Tree.get_grounded_node(node.left, grounded_nodes)
+    Tree.get_grounded_node(node.right, grounded_nodes)
+
+
   # 
-  def merge():
+  def merge(grounded_nodes):
+    
+
     return
 
 
 def _build_split_tree(node, method):
   if node is None:
+    print("return: node is None")
     return
+  if node.active is False:
+    print("return: {}, node.active is False".format(node))
+    return
+    
   # if Tree.total_leaves >= Tree.MAX_LEAVES:
   #   return
-  if node.size < 30:
-    return
+  # if node.size < 30:
+  #   print("return: node.size < 30")
+  #   return
 
   # split current node
   # if n not define means use only one method to split
-  if _build_split_tree.n == None:
-    node.split(method)
-  elif node.level < _build_split_tree.n:
-    node.split(method[0])
-  else:
-    node.split(method[1])
+  # if _build_split_tree.n == None:
+  node.split(method)
+  # elif node.level < _build_split_tree.n:
+  #   node.split(method[0])
+  # else:
+  #   node.split(method[1])
 
+  print("{}, node.active = {}".format(node, node.active))
+  print(node.left)
+  print(node.right)
+
+  print("\ncall _build_split_tree, left")
   _build_split_tree(node.left, method)
+  print("\ncall _build_split_tree, right")
   _build_split_tree(node.right, method)
 
   return
 
 
-def paint_tree(current_node, root_node):
+def paint_tree(current_node, root_node, deep=0):
   dim = len(root_node.datapoints[0])
 
   if dim != 2:
@@ -126,10 +161,10 @@ def paint_tree(current_node, root_node):
     mag = "this tree is empty."
     raise ValueError(msg)
 
+  print('    ' * deep, current_node.grounded)
   if current_node.left is None:
     return 
   if current_node.grounded:
-    print("grounded")
     return
   # if current_node.active is False:
   #   return
@@ -140,8 +175,8 @@ def paint_tree(current_node, root_node):
   utl.draw_2cluster(current_node.left.datapoints, current_node.right.datapoints)
   plt.show()
 
-  paint_tree(current_node.left, root_node)
-  paint_tree(current_node.right, root_node)
+  paint_tree(current_node.left, root_node, deep+1)
+  paint_tree(current_node.right, root_node, deep+1)
 
   return
 
@@ -156,7 +191,8 @@ method:
 def ms2c(datapoints, method='rwm', n=None):
   _build_split_tree.n = n
   root = Tree(None, datapoints)
-  
+
+  print("start build split tree\n")
   _build_split_tree(root, method)
 
   return root
@@ -168,6 +204,10 @@ if __name__ == '__main__':
   ms_tree = ms2c(points)
   paint_tree(ms_tree, ms_tree)
 
+  grounded_list = []
+  Tree.get_grounded_node(ms_tree, grounded_list)
 
-
+  print("\n\n============================")
+  for node in grounded_list:
+    # print("cut_id = {}, ")
 
