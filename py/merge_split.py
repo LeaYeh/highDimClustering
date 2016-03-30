@@ -99,6 +99,23 @@ class Tree:
     return
 
 
+  def find_merge_candidate(root):
+    candidates = []
+    def _get_cands(node, candidates):
+      if node is None:
+        return
+      if node.in_bound_record and node.grounded and node.active:
+        print("node.parent = {}, #in_bound_points = {}".format(node.parent, node.in_bound_record[0]))
+        candidates.append(node)
+        return
+      _get_cands(node.left, candidates)
+      _get_cands(node.right, candidates)
+
+    _get_cands(root, candidates)
+
+    return candidates
+
+
   def get_grounded_node(node, grounded_nodes):
     if node is None:
       return
