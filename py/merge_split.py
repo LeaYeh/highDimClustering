@@ -126,11 +126,46 @@ class Tree:
     Tree.get_grounded_node(node.right, grounded_nodes)
 
 
-  # 
+  # [problem] less to consider dist between candidate node
   def merge(grounded_nodes):
-    
+    final_clusters = []
 
-    return
+    while grounded_nodes:
+      cur_node = grounded_nodes.pop(0)
+      cur_recs = cur_node.in_bound_record
+
+
+      print("cur_recs = ", cur_recs)
+      if not cur_node.active:
+        continue
+      if not cur_recs:
+        final_clusters.append(cur_node)
+      else:
+        for other_node in grounded_nodes:
+          if not other_node.active:
+            continue
+          need_merge = False
+          other_recs = other_node.in_bound_record
+          if other_recs:
+            for crec in cur_recs:
+              cur_cut_id = crec[0]
+              cur_color = crec[1]
+              cur_points = crec[2]
+              for orec in other_recs:
+                other_cut_id = orec[0]
+                other_color = orec[1]
+                other_points = orec[2]
+                if (cur_cut_id == other_cut_id) and (cur_color != other_color):
+                  need_merge = True
+          if need_merge:
+            np.append(cur_node.datapoints, other_node.datapoints, axis=0)
+            cur_node.in_bound_record.extend(other_recs)
+            other_node.active = False
+        final_clusters.append(cur_node)
+
+    print("final_clusters = ", len(final_clusters))
+
+    return final_clusters
 
 
 def _build_split_tree(node, method):
