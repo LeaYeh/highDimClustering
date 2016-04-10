@@ -69,22 +69,23 @@ class Tree:
 
 
     if method == 'rwm':
-      cluster1, cluster2, in_boundary, coeff = rwm.rwm_cut(self.datapoints)
+      clusterL, clusterR, in_boundary, coeff = rwm.rwm_cut(self.datapoints)
       bound_size = len(in_boundary[0]) + len(in_boundary[1])
 
       # create node by split result
-      self.right = Tree(self, cluster1)
-      self.right.size = len(cluster1)
-      self.left = Tree(self, cluster2)
-      self.left.size = len(cluster2)
+      self.right = Tree(self, clusterR)
+      self.right.size = len(clusterR)
+      self.left = Tree(self, clusterL)
+      self.left.size = len(clusterL)
 
-      print("cid = ", Tree.total_cut, ", bound_size = ", bound_size, "self.size/6 = ", self.size // 5)
+      print("cid = ", Tree.total_cut, ", bound_size = ", bound_size, "self.size/5 = ", self.size // 5)
+      # not a good condiction, just walkaround first
       if bound_size >= (self.size // 5):
         self.left.bad_cut = self.bad_cut + 1
         self.right.bad_cut = self.bad_cut + 1
         print("cut id ", Tree.total_cut, " is bad cut")
-        self.left.in_bound_record.append((Tree.total_cut, '-', in_boundary[0]))
-        self.right.in_bound_record.append((Tree.total_cut, '+', in_boundary[1]))
+        self.left.in_bound_record.append((Tree.total_cut, 'L', in_boundary[0]))
+        self.right.in_bound_record.append((Tree.total_cut, 'R', in_boundary[1]))
 
       if self.in_bound_record:
         print("self.in_bound_record = ", len(self.in_bound_record))
@@ -94,10 +95,12 @@ class Tree:
         rec_color  = bound_rec[1]
         rec_points = bound_rec[2]
         b_left, b_right = rwm.cut_by_coeff(rec_points, coeff)
-        self.left.in_bound_record.append((rec_cut_id, rec_color, b_left))
-        self.right.in_bound_record.append((rec_cut_id, rec_color, b_right))
-        print("cur cid = {}, rec_cut_id = {}".format(Tree.total_cut, rec_cut_id))
 
+        if b_left.shape[0]:
+          self.left.in_bound_record.append((rec_cut_id, rec_color, b_left))
+        if b_right.shape[0]:
+          self.right.in_bound_record.append((rec_cut_id, rec_color, b_right))
+        print("cur cid = {}, rec_cut_id = {}".format(Tree.total_cut, rec_cut_id))
 
       print("after split, child.bad_cut = {}".format(self.left.bad_cut))
       Tree.total_cut += 1
@@ -105,11 +108,7 @@ class Tree:
     return
 
 
-  def _is_all_leves_grounded():
-    return
-
-
-  def find_merge_candidate(root, grounded_list):
+  def find_merge_candidate(grounded_list):
     candidates = []
 
     for node in grounded_list:
@@ -129,6 +128,47 @@ class Tree:
     Tree.get_grounded_node(node.right, grounded_nodes)
 
 
+  def is_close_enough(cur_points, other_points):
+    cur_rep = np.mean(cur_points, axis=0)
+    other_rep = np.mean(other_points, axis=0)
+    threshold = utl.euclideanDistance(cur_rep, other_rep) / 10
+    min_dist, min_point = Tree._two_cluster_min_dist(cur_points, other_points)
+
+    print("threshold = {}, min_dist = {}".format(threshold, min_dist))
+
+    # plt.clf()
+
+    plt.plot(cur_points[:, 0], cur_points[:, 1], 'ko')
+    plt.plot(other_points[:, 0], other_points[:, 1], 'k+')
+
+    plt.plot(cur_rep[0], cur_rep[1], 'ro')
+    plt.plot(other_rep[0], other_rep[1], 'go')
+
+    plt.plot(min_point[0][0], min_point[0][1], 'bo')
+    plt.plot(min_point[1][0], min_point[1][1], 'yo')
+
+    plt.show()
+
+    if min_dist <= threshold:
+      # plt.show()
+      return True
+
+    return False
+
+
+  def _two_cluster_min_dist(cur_points, other_points):
+    min_dist = utl.euclideanDistance(cur_points[0], other_points[0])
+
+    for cp in cur_points:
+      for op in other_points:
+        tmp_dist = utl.euclideanDistance(cp, op)
+        if tmp_dist < min_dist:
+          min_dist = tmp_dist
+          min_point = [cp, op]
+
+    return min_dist, min_point
+
+
   # [problem] less to consider dist between candidate node
   def merge(grounded_nodes):
     final_clusters = []
@@ -144,15 +184,13 @@ class Tree:
         grounded_nodes.pop(0)
         final_clusters.append(cur_node)
       else:
-        other_size = len(grounded_nodes[1:])
-        other_nonactive = 0
+        no_merge_occour = True
 
         for other_node in grounded_nodes[1:]:
           need_merge = False
           other_recs = other_node.in_bound_record
 
           if not other_node.active:
-            other_nonactive += 1
             continue
           if other_recs:
             for crec in cur_recs:
@@ -164,17 +202,17 @@ class Tree:
                 other_color = orec[1]
                 other_points = orec[2]
                 if (cur_cut_id == other_cut_id) and (cur_color != other_color):
-                  need_merge = True
+                  gdatas = [node.datapoints for node in grounded_nodes]
+                  repaint(gdatas)
+                  if Tree.is_close_enough(cur_points, other_points):
+                    print("{} and {} is close".format(cur_node, other_node))
+                    need_merge = True
           if need_merge:
-            # print("\n\n================ before\n", cur_node.datapoints, "\n-----------\n", other_node.datapoints)
             cur_node.datapoints = np.append(cur_node.datapoints, other_node.datapoints, axis=0)
-            # print("================after\n", cur_node.datapoints)
             cur_node.in_bound_record.extend(other_recs)
             other_node.active = False
-          else:
-            grounded_nodes.pop(0)
-            final_clusters.append(cur_node)
-        if other_nonactive == other_size:
+            no_merge_occour = False
+        if no_merge_occour:
           grounded_nodes.pop(0)
           final_clusters.append(cur_node)
 
@@ -263,6 +301,35 @@ def ms2c(datapoints, method='rwm', n=None):
   return root
 
 
+def repaint(grounded_nodes):
+  plt.clf()
+  for gnode in grounded_nodes:
+    plt.scatter(gnode[:, 0], gnode[:, 1], color=(0, 0, 0))
+
+  return
+
+
+def check_bound_rec(grounded_nodes, merge_candidates):
+  # check place of merge_candidates
+  repaint(grounded_nodes)
+  for mnode in merge_candidates:
+    plt.scatter(mnode.datapoints[:, 0], mnode.datapoints[:, 1], color=np.random.rand(3))
+  plt.show()
+
+  # check the bound_rec in each node
+  for mnode in merge_candidates:
+    repaint(grounded_nodes)
+    plt.plot(mnode.datapoints[:, 0], mnode.datapoints[:, 1], 'go')
+    for bound_rec in mnode.in_bound_record:
+      clr=np.random.rand(3)
+      points = bound_rec[2]
+      plt.plot(points[:, 0], points[:, 1], 'ro')
+      plt.show()
+      plt.plot(points[:, 0], points[:, 1], 'ko')
+
+  return
+
+
 if __name__ == '__main__':
   points, label = utl.read_from_text('2d5c_std')
 
@@ -271,9 +338,7 @@ if __name__ == '__main__':
 
   grounded_list = []
   Tree.get_grounded_node(ms_tree, grounded_list)
-
-  ms_cands = Tree.find_merge_candidate(ms_tree, grounded_list)
-
+  ms_cands = Tree.find_merge_candidate(grounded_list)
 
   print("\n#grounded = ", len(grounded_list))
   for g in grounded_list:
@@ -281,38 +346,39 @@ if __name__ == '__main__':
   gnodes = [node.datapoints for node in grounded_list]
   gnode_bounds = [node.in_bound_record for node in grounded_list if node.in_bound_record]
 
+
+  # check_bound_rec(gnodes, ms_cands)
+
   i = 0
   for node in gnode_bounds:
     print("node", i)
     for rec in node:
       print("   cid = {}, side = {}".format(rec[0], rec[1]))
+      print("   #points = ", len(rec[2]))
     i += 1
 
   print("\n#m_candidates = ", len(ms_cands))
   for c in ms_cands:
-    print(c, " , level = ", c.level)
+    print(c, " , level = ", c.level, ", #bound_rec = ", len(c.in_bound_record))
 
-
-  # for g in grounded_list:
-  #   print("g node: ", g.in_bound_record)
-  #
-
-
-  # utl.draw_clusters(gnodes)
+  utl.draw_clusters(gnodes)
 
   mnodes = [node.datapoints for node in ms_cands]
-  # print("mnodes = \n", mnodes)
+  # repaint(gnodes)
+  # utl.draw_clusters(mnodes)
+
+
+
+
+  """
+  ======================================================================
+  """
+  # repaint(gnodes)
 
   final_node = Tree.merge(grounded_list)
   final_cls = [x.datapoints for x in final_node]
 
-  # for node in final_node:
-  #   print(node)
-
+  # repaint(gnodes)
   print("#final_cls = ", len(final_cls))
   utl.draw_clusters(final_cls)
-
-  # print("\n\n============================")
-  # for node in grounded_list:
-    # print("cut_id = {}, ")
 
