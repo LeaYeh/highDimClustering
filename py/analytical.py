@@ -123,22 +123,35 @@ assume that PA always has higher possibility
 
 """
 def _tcf(datapoints, table=None, method=3):
+  '''
+  >>> datapoints = np.array([ [2, 5], [1.5, 3], [2.5, 3], [1.5, 2], [2, 2], [3, 2.5], [1, 1], [1.5, -5], [2, -5], [2, -6] ])
+  >>> _tcf(datapoints)
+  (array([ 1.3823914 ,  2.65862222]), array([ 1.3823914 , -2.65862222]))
+  '''
   size, dim = datapoints.shape
   center = np.mean(datapoints, axis=0)
  
-  pri_num, sec_num = _box_vote(datapoints - center)
+  offset_data = datapoints - center
+  pri_num, sec_num = _box_vote(datapoints)
 
   # method 3
-  ravg2= sum(np.sqrt(np.sum(datapoints ** 2, axis=1))) / size
-  r2avg = sum(np.sum(datapoints ** 2, axis=0)) / size
-  r2list = np.sum(datapoints ** 2, axis=0) / size
-  pa = 0.5 + 0.5 * (1 - ravg2 / r2avg) ** 2
+  data2_bar = np.mean(datapoints ** 2, axis=0)
+  rbar_2 = np.sum(np.sqrt(np.sum(datapoints ** 2, axis=1)) / size) ** 2
+  r2_bar = np.sum(data2_bar)
+  pa = 0.5 + 0.5 * np.sqrt(1 - rbar_2 / r2_bar)
   pb = 1 - pa
-  val = np.sqrt((pb / pa) * r2list)
+  val = np.sqrt((pb / pa) * data2_bar)
+
+  # ravg2= sum(np.sqrt(np.sum(datapoints ** 2, axis=1))) / size
+  # r2avg = sum(np.sum(datapoints ** 2, axis=0)) / size
+  # r2list = np.sum(datapoints ** 2, axis=0) / size
+  # pa = 0.5 + 0.5 * (1 - ravg2 / r2avg) ** 2
+  # pb = 1 - pa
+  # val = np.sqrt((pb / pa) * r2list)
 
   # offset to origin 
-  centroid_a = _boxnum2coeff(pri_num, dim) * val + center
-  centroid_b = _boxnum2coeff(sec_num, dim) * val + center
+  centroid_a = _boxnum2coeff(pri_num, dim) * val #+ center
+  centroid_b = _boxnum2coeff(sec_num, dim) * val #+ center
 
   return centroid_a, centroid_b
 
@@ -166,10 +179,34 @@ def tcf_cut(datapoints, table=None, method=3):
 
 if __name__ == '__main__':
   doctest.testmod()
-  points, label = utl.gaussian_data_generator(dim=3, cls=5)
-  # _box_vote(np.array([2, -1], [4, 2], [0, 2], [-2, -10], [2, 1]))
-  print("points[0] = ", points[0])
-  _box_vote(points[0:2])
+  points, label = utl.gaussian_data_generator(dim=2, cls=7)
+
+  import rwm as rwm
+
+  c1, c2, bound, coeff = rwm.rwm_cut(points)
+  a, b = tcf_cut(points)
+
+  fig, axs = plt.subplots(1, 2)
+
+  axs[0].set_title('rwm')
+  axs[0].plot(c1[:, 0], c1[:, 1], 'ro')
+  axs[0].plot(c2[:, 0], c2[:, 1], 'bo')
+
+  axs[1].set_title('analytical')
+  axs[1].plot(a[:, 0], a[:, 1], 'ro')
+  axs[1].plot(b[:, 0], b[:, 1], 'bo')
+
+  plt.tight_layout()
+  plt.show()
+  # plt.plot(a[:, 0], a[:, 1], 'ro')
+  # plt.plot(b[:, 0], b[:, 1], 'bo')
+  # plt.show()
+  #
+  # plt.plot(c1[:, 0], c1[:, 1], 'ro')
+  # plt.plot(c2[:, 0], c2[:, 1], 'bo')
+  # plt.show()
+
+
   # _box_vote(points)
   # for i in range(2, 26):
   #   points, label = utl.gaussian_data_generator(dim=i, cls=5, objs_size=[1000, 1000, 1000, 1000, 1000])
