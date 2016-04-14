@@ -28,6 +28,7 @@ class Tree:
     self.grounded = False
     self.active = True
     self.in_bound_record = []
+    self.grounded_nodes = None
 
     if parent is None:
       self.level = 0
@@ -108,24 +109,38 @@ class Tree:
     return
 
 
-  def find_merge_candidate(grounded_list):
-    candidates = []
+  def find_merge_candidate(root):
+    if not root.grounded_nodes:
+      set_grounded_node(root)
 
-    for node in grounded_list:
+    candidates = []
+    grounded_nodes = root.grounded_nodes
+
+    for node in grounded_nodes:
       if node.in_bound_record:
         candidates.append(node)
 
     return candidates
 
 
-  def get_grounded_node(node, grounded_nodes):
-    if node is None:
-      return
-    if node.grounded:
-      grounded_nodes.append(node)
-      return
-    Tree.get_grounded_node(node.left, grounded_nodes)
-    Tree.get_grounded_node(node.right, grounded_nodes)
+  def set_grounded_node(root):
+    grounded_nodes = []
+
+    def _get_grounded(node, gnodes):
+      if node is None:
+        return
+      if node.grounded:
+        gnodes.append(node)
+        return
+      _get_grounded(node.left, gnodes)
+      _get_grounded(node.right, gnodes)
+
+    _get_grounded(root, grounded_nodes)
+
+    if not root.grounded_nodes:
+      root.grounded_nodes = grounded_nodes
+
+    return grounded_nodes
 
 
   def is_close_enough(cur_points, other_points):
@@ -170,7 +185,11 @@ class Tree:
 
 
   # [problem] less to consider dist between candidate node
-  def merge(grounded_nodes):
+  def merge(root):
+    if not root.grounded_nodes:
+      set_grounded_node(root)
+
+    grounded_nodes = root.grounded_nodes
     final_clusters = []
 
     while grounded_nodes:
@@ -334,51 +353,59 @@ if __name__ == '__main__':
   points, label = utl.read_from_text('2d5c_std')
 
   ms_tree = ms2c(points)
-  # paint_tree(ms_tree, ms_tree)
+  grounded_nodes = Tree.set_grounded_node(ms_tree)
 
-  grounded_list = []
-  Tree.get_grounded_node(ms_tree, grounded_list)
-  ms_cands = Tree.find_merge_candidate(grounded_list)
-
-  print("\n#grounded = ", len(grounded_list))
-  for g in grounded_list:
-    print(g, " , level = ", g.level)
-  gnodes = [node.datapoints for node in grounded_list]
-  gnode_bounds = [node.in_bound_record for node in grounded_list if node.in_bound_record]
-
-
-  # check_bound_rec(gnodes, ms_cands)
-
-  i = 0
-  for node in gnode_bounds:
-    print("node", i)
-    for rec in node:
-      print("   cid = {}, side = {}".format(rec[0], rec[1]))
-      print("   #points = ", len(rec[2]))
-    i += 1
-
-  print("\n#m_candidates = ", len(ms_cands))
-  for c in ms_cands:
-    print(c, " , level = ", c.level, ", #bound_rec = ", len(c.in_bound_record))
-
-  utl.draw_clusters(gnodes)
-
-  mnodes = [node.datapoints for node in ms_cands]
-  # repaint(gnodes)
-  # utl.draw_clusters(mnodes)
-
-
-
-
-  """
-  ======================================================================
-  """
-  # repaint(gnodes)
-
-  final_node = Tree.merge(grounded_list)
-  final_cls = [x.datapoints for x in final_node]
-
-  # repaint(gnodes)
-  print("#final_cls = ", len(final_cls))
+  final_nodes = ms_tree.merge()
+  final_cls = [x.datapoints for x in final_nodes]
   utl.draw_clusters(final_cls)
+
+
+  # ms_tree = ms2c(points)
+  # # paint_tree(ms_tree, ms_tree)
+  #
+  # grounded_list = []
+  # Tree.get_grounded_node(ms_tree, grounded_list)
+  # ms_cands = Tree.find_merge_candidate(grounded_list)
+  #
+  # print("\n#grounded = ", len(grounded_list))
+  # for g in grounded_list:
+  #   print(g, " , level = ", g.level)
+  # gnodes = [node.datapoints for node in grounded_list]
+  # gnode_bounds = [node.in_bound_record for node in grounded_list if node.in_bound_record]
+  #
+  #
+  # # check_bound_rec(gnodes, ms_cands)
+  #
+  # i = 0
+  # for node in gnode_bounds:
+  #   print("node", i)
+  #   for rec in node:
+  #     print("   cid = {}, side = {}".format(rec[0], rec[1]))
+  #     print("   #points = ", len(rec[2]))
+  #   i += 1
+  #
+  # print("\n#m_candidates = ", len(ms_cands))
+  # for c in ms_cands:
+  #   print(c, " , level = ", c.level, ", #bound_rec = ", len(c.in_bound_record))
+  #
+  # utl.draw_clusters(gnodes)
+  #
+  # mnodes = [node.datapoints for node in ms_cands]
+  # # repaint(gnodes)
+  # # utl.draw_clusters(mnodes)
+  #
+  #
+  #
+  #
+  # """
+  # ======================================================================
+  # """
+  # # repaint(gnodes)
+  #
+  # final_node = Tree.merge(grounded_list)
+  # final_cls = [x.datapoints for x in final_node]
+  #
+  # # repaint(gnodes)
+  # print("#final_cls = ", len(final_cls))
+  # utl.draw_clusters(final_cls)
 
