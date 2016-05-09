@@ -33,6 +33,9 @@ def data_seletor(dataset_name):
   elif dataset_name == "letter-recognition":
     points, label = utl.read_from_text('letter-recognition')
 
+  elif dataset_name == "lung-cancer":
+    points, label = utl.read_from_text('lung-cancer')
+
   elif dataset_name == "image_seg":
     points, label = utl.read_from_text('imgseg')
 
@@ -42,6 +45,9 @@ def data_seletor(dataset_name):
   elif dataset_name == '50d6c':
     points, label = utl.read_from_text('50d6c_std')
 
+  else:
+    assert("not found")
+
   return points, label
 
 
@@ -50,10 +56,13 @@ def plot_embedding(datapoints, label, title=None):
   x_min, x_max = np.min(datapoints, 0), np.max(datapoints, 0)
   datapoints = (datapoints - x_min) / (x_max - x_min)
 
+  # find number of clusters
+  n_cls = len(set(label))
+
   plt.figure()
   for i in range(datapoints.shape[0]):
     plt.text(datapoints[i, 0], datapoints[i, 1], int(label[i]),
-            color=plt.cm.Set1(label[i] / 20),
+            color=plt.cm.Set1(label[i] / n_cls),
             fontdict={'weight': 'bold', 'size': 9})
 
   plt.xticks([]), plt.yticks([])
@@ -64,13 +73,16 @@ def plot_embedding(datapoints, label, title=None):
 
 if __name__ == '__main__':
 
-  # orig_points, orig_label = data_seletor('hand_write_digits')
+  orig_points, orig_label = data_seletor('hand_write_digits')
   # orig_points, orig_label = data_seletor('image_seg')
-  orig_points, orig_label = data_seletor('letter-recognition')
+  # orig_points, orig_label = data_seletor('letter-recognition')
+  # orig_points, orig_label = data_seletor('lung-cancer')
   # orig_points, orig_label = data_seletor('50d6c')
   # orig_points, orig_label = utl.read_from_text('20d6c_cov')
   # orig_points, orig_label = utl.read_from_text('200d5c_cov')
   # orig_points, orig_label = utl.read_from_text('100d8c_cov')
+  # orig_points, orig_label = utl.read_from_text('500d6c_cov')
+  # orig_points, orig_label = utl.read_from_text('100d5c_new')
   #----------------------------------------------------------------------
   # t-SNE embedding of the digits dataset
   t0 = time()
@@ -78,11 +90,15 @@ if __name__ == '__main__':
   final_nodes = ms_tree.merge()
   my_time = time() - t0
   grounded_nodes = ms_tree.grounded_nodes
+  ms_cands = ms_tree.find_merge_candidate()
   final_cls = [x.datapoints for x in final_nodes]
   ground_cls = [x.datapoints for x in grounded_nodes]
+  ms_cands_cls = [x.datapoints for x in ms_cands]
   # utl.draw_clusters(final_cls)
-  print(len(ground_cls))
+  print(len(ground_cls), " ", len(ms_cands))
   print(len(final_nodes))
+
+  print([len(c) for c in final_cls])
 
   for label_id, cluster in enumerate(final_cls, 0):
     size = len(cluster)

@@ -1,7 +1,7 @@
 import utils as utl
 np = utl.np
 plt = utl.plt
-import tcf as tcf
+# import tcf as tcf
 
 
 
@@ -44,7 +44,6 @@ def cut_by_coeff(datapoints, coeff):
 input:  datapoints(numpy.ndarray)
 output: two list of data in each cluster
 """
-@utl.log_msg
 def rwm_cut(datapoints, boundary_width=10):
   in_boundary = 0
   size, dim = datapoints.shape
@@ -79,7 +78,6 @@ def rwm_cut(datapoints, boundary_width=10):
   return c_left, c_right, (r_bp, l_bp), coeff
 
 
-
 if __name__ == '__main__':
   # for i in range(2, 256):
   #   points, label = utl.gaussian_data_generator(dim=i, objs_size=[1000, 1000, 1000, 1000, 1000], cls=5)
@@ -94,7 +92,6 @@ if __name__ == '__main__':
 
 
   c1, c2, d = rwm_cut(points)
-
 
   plt.show()
 

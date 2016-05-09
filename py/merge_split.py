@@ -175,6 +175,8 @@ class Tree:
     ==================================================
     [10, 5, 3, 2.5, 2]
     '''
+    # cur_size = len(cur_points)
+    # other_size = len(other_points)
     threshold = utl.euclideanDistance(cur_rep, other_rep) / 3
     min_dist, min_point = Tree._two_cluster_min_dist(cur_points, other_points)
 
@@ -219,6 +221,7 @@ class Tree:
     #   plt.show()
 
     return False
+    # return True
 
 
   def _two_cluster_min_dist(cur_points, other_points):
@@ -236,7 +239,7 @@ class Tree:
         # tmp_dist = ( (cp[0] - op[0]) ** 2 + (cp[1] - op[1]) ** 2 ) ** 0.5
         tmp_dist = utl.euclideanDistance(cp, op)
         if tmp_dist < min_dist:
-          print("tmp_dist = {}, min_dist = {}".format(tmp_dist, min_dist))
+          # print("tmp_dist = {}, min_dist = {}".format(tmp_dist, min_dist))
           min_dist = tmp_dist
           min_point = [cp, op]
           #
