@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from numpy.random import multivariate_normal
 from sklearn.datasets import make_gaussian_quantiles
 import matplotlib
 matplotlib.use("Qt4Agg")
@@ -12,60 +13,12 @@ import math
 import operator
 
 
+#---------------------- Data pre-processing -------------------------
 def standardize_data(datasets):
   size = len(datasets)
   center = np.mean(datasets, axis=0)
-  print(center)
 
   return datasets - center
-
-
-def stats_accuracy(y_pred, y_true):
-  n = len(y_pred)
-  tp = 0
-
-  for i in range(n):
-    if y_pred[i] is y_true[i]:
-      tp += 1
-
-  return tp / n
-
-
-def euclideanDistance(instance1, instance2):
-  dim = len(instance1)
-  distance = 0
-
-
-  for x in range(dim):
-    distance += pow((instance1[x] - instance2[x]), 2)
-
-  return math.sqrt(distance)
-
-
-def getKthNeighbor(point, datasets, k):
-  distances = []
-
-  for i in range(len(datasets)):
-    dist = euclideanDistance(point, datasets[i])
-    distances.append((datasets[i], dist))
-
-  distances.sort(key=operator.itemgetter(1))
-
-  # output kth point and distance
-  return distances[k]
-
-
-def log_msg(func):                                                              
-  def with_logging(*arg, **kwargs):                                             
-    print(func.__name__ + "...", end="", flush=True)                            
-    t0 = time.time()                                                            
-    res = func(*arg, **kwargs)                                                  
-    t1 = time.time()                                                            
-    print("done  %.2g sec" % (t1 - t0))                                         
-                                                                                
-    return res                                                                  
-                                                                                
-  return with_logging
 
 
 def gaussian_data_generator(dim=2, cls=5, objs_size=None, cov=None):
@@ -74,14 +27,14 @@ def gaussian_data_generator(dim=2, cls=5, objs_size=None, cov=None):
   init necessary parameters
   """
   if cov is None:
-    cov = [random.randrange(100, 500, 50) for _ in range(cls)]
+    cov = [random.randrange(100, 500, 100) for _ in range(cls)]
 
   if objs_size is None:
     # random each cluster size; min=100, max=1000
-    objs_size = [random.randrange(100, 1000, 50) for _ in range(cls)]
+    objs_size = [random.randrange(100, 500, 50) for _ in range(cls)]
     # print("random object size = ", objs_size)
 
-  means = [[random.randrange(0, 500, 50) for __ in range(dim)] for _ in range(cls)] 
+  means = [[random.randrange(100, 200, 20) for __ in range(dim)] for _ in range(cls)] 
   # print("object's mean = ", means)
 
   point = []
@@ -97,22 +50,31 @@ def gaussian_data_generator(dim=2, cls=5, objs_size=None, cov=None):
     list(map(lambda x: label.append(x + i), tmp_label))
 
   # [temp] redundant translate to np.array
-  return np.array(point), np.array(label)
+  return standardize_data(np.array(point)), np.array(label)
 
 
-def graph(coeff, x_range):
-  x = np.array(x_range)
-  y = (-coeff[0] * x - coeff[2]) / coeff[1]
-  plt.plot(x, y, 'ro')
+def normal_data_generator(dim=2, cls=5):
+  point = []
+  label = []
 
-  return
+  for i in range(cls):
+    mean = [random.randrange(100, 500, 50) for _ in range(dim)]
+    _ = np.random.randint(1, 10, size=(dim, dim)) * 50
+    cov = (_ + _.T)/2
+    for r in range(dim):
+      for c in range(dim):
+        if r != c:
+          cov[r, c] = 0
+    size = random.randrange(100, 1500, 100)
+    print(cov)
+
+    tmp_point = np.random.multivariate_normal(mean, cov, size)
+    list(map(lambda x: point.append(x), tmp_point))
+    [label.append(i) for _ in range(len(tmp_point))]
+
+  return standardize_data(np.array(point)), np.array(label)
 
 
-def draw_2cluster(cluster1, cluster2):
-  plt.clf()
-  plt.plot(cluster1[:, 0], cluster1[:, 1], 'ro');
-  plt.plot(cluster2[:, 0], cluster2[:, 1], 'bx');
-  plt.show()
 def read_from_text(name):
   data = np.loadtxt("dataset_text/" + name, delimiter=' ')
   points, label = data[:, :-1], data[:, -1]
@@ -126,15 +88,92 @@ def write_to_text(name, points, label):
 
   return
 
+#--------------------------- Math tools -----------------------------
+def stats_accuracy(y_pred, y_true):
+  n = len(y_pred)
+  tp = 0
+
+  for i in range(n):
+    if y_pred[i] is y_true[i]:
+      tp += 1
+
+  return tp / n
+
+
+def euclideanDistance(instance1, instance2):
+  dim = len(instance1)
+  distance = 0
+
+  for x in range(dim):
+    distance += (instance1[x] - instance2[x]) ** 2
+
+  return math.sqrt(distance)
+
+
+#---------------------- Algorithm related ---------------------------
+def getKthNeighbor(point, datasets, k):
+  distances = []
+
+  for i in range(len(datasets)):
+    dist = euclideanDistance(point, datasets[i])
+    distances.append((datasets[i], dist))
+
+  distances.sort(key=operator.itemgetter(1))
+
+  # output kth point and distance
+  return distances[k]
+
+
+
+#------------------------- Other tools ------------------------------
+def log_msg(func):                                                              
+  def with_logging(*arg, **kwargs):                                             
+    print(func.__name__ + "...", end="", flush=True)                            
+    t0 = time.time()                                                            
+    res = func(*arg, **kwargs)                                                  
+    t1 = time.time()                                                            
+    print("done  %.2g sec" % (t1 - t0))                                         
+                                                                                
+    return res                                                                  
+                                                                                
+  return with_logging
+
+
+def graph(coeff, x_range, mark='ro'):
+  x = np.array(x_range)
+  y = (-coeff[0] * x - coeff[2]) / coeff[1]
+  plt.plot(x, y, mark, ms=3)
+
+  return
+
+
+def draw_2cluster(cluster1, cluster2):
+  plt.plot(cluster1[:, 0], cluster1[:, 1], 'ro')
+  plt.plot(cluster2[:, 0], cluster2[:, 1], 'bo')
+
+  return
+
+
+def draw_clusters(cluster_itr):
+  for cls in cluster_itr:
+    plt.scatter(cls[:, 0], cls[:, 1], color=np.random.rand(3));
+  plt.show()
+
+  return
+
 
 if __name__ == '__main__':
-  points, label = gaussian_data_generator(objs_size=[5, 5, 5], cls=3)
-  print(points)
-  print(standardize_data(points))
+  # points, label = gaussian_data_generator(dim=2, cls=5)
+  points, label = normal_data_generator(dim=20, cls=5)
+
+  # pprint(read_from_text('2d5c_std'))
+  write_to_text('20d5c_noncycle_close', points, label)
 
   for i in np.unique(label):
     fetch_cluster = points[label == i]
-    plt.scatter(fetch_cluster[:, 0], fetch_cluster[:, 1], color=np.random.rand(3));
+    plt.scatter(fetch_cluster[:, 0], fetch_cluster[:, 1], color=np.random.rand(3))
 
 
   plt.show()
+
+
