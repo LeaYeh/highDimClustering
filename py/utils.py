@@ -162,6 +162,39 @@ def draw_clusters(cluster_itr):
   return
 
 
+def calc_accuracy_rate(true_labels, pred_labels):
+  def compare_two_index_score(true_labels, pred_labels):
+    correct = 0
+    total = 0
+
+    for index_combo in itertools.combinations(range(len(true_labels)), 2):
+      index1 = index_combo[0]
+      index2 = index_combo[1]
+      same_class = (true_labels[index1] == true_labels[index2])
+      same_cluster = (pred_labels[index1] == pred_labels[index2])
+
+      if same_class and same_cluster:
+        correct += 1
+      elif not same_class and not same_cluster:
+        correct += 1
+      total += 1
+
+    return float(correct) / total
+
+  homo = metrics.homogeneity_score(true_labels, pred_labels)
+  comlet = metrics.completeness_score(true_labels, pred_labels)
+  v = metrics.v_measure_score(true_labels, pred_labels)
+  ami = metrics.adjusted_mutual_info_score(true_labels, pred_labels)
+  ari = metrics.adjusted_rand_score(true_labels, pred_labels)
+  tis = compare_two_index_score(true_labels, pred_labels)
+
+  print('homogeneity_score = ', homo)
+  print('completeness_score = ', comlet)
+  print('v_measure_score = ', v)
+  print('adjusted_mutual_info_score = ', ami)
+  print('adjusted_rand_score = ', ari)
+  print('compare_two_index_score = ', tis)
+
 if __name__ == '__main__':
   # points, label = gaussian_data_generator(dim=2, cls=5)
   points, label = normal_data_generator(dim=20, cls=5)
