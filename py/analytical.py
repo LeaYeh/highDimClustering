@@ -1,5 +1,6 @@
 import utils as utl
 import doctest
+from rwm import cut_by_coeff
 np = utl.np
 plt = utl.plt
 
@@ -153,7 +154,11 @@ def _tcf(datapoints, table=None, method=3):
   centroid_a = _boxnum2coeff(pri_num, dim) * val #+ center
   centroid_b = _boxnum2coeff(sec_num, dim) * val #+ center
 
-  return centroid_a, centroid_b
+  v = centroid_b - centroid_a
+  o = (centroid_a + centroid_b) / 2
+  coeff = np.append(v, sum(-v * o))
+
+  return coeff
 
 
 """
@@ -161,30 +166,73 @@ input: datapoints, table, type of method
 output: two list of data in each cluster
 """
 @utl.log_msg
-def tcf_cut(datapoints, table=None, method=3):
-  centroid_a, centroid_b = _tcf(datapoints, table, method)
-  cluster_a = []
-  cluster_b = []
+def tcf_cut(datapoints, boundary_width=0.1, n=2, table=None, method=3):
+  coeff = _tcf(datapoints, table, method)
+  # cluster_a = []
+  # cluster_b = []
+  c_left = []
+  c_right = []
+
+  r_bp = []
+  l_bp = []
+
+  r_nbp = []
+  l_nbp = []
 
   for point in datapoints:
-    dist_ca = sum((point - centroid_a) ** 2)
-    dist_cb = sum((point - centroid_b) ** 2)
-    if dist_ca <= dist_cb:
-      cluster_a.append(point)
-    else:
-      cluster_b.append(point)
+    # calc distance from point to boundary
+    unit_len = sum(coeff[:-1] ** 2) ** 0.5
+    p2b_dist = (sum(point * coeff[:-1]) + coeff[-1]) / unit_len
 
-  return np.array(cluster_a, np.float), np.array(cluster_b, np.float)
+    if abs(p2b_dist) <= boundary_width * n:
+      if p2b_dist >= 0:
+        r_nbp.append(point)
+      else:
+        l_nbp.append(point)
+
+    if abs(p2b_dist) <= boundary_width:
+      if p2b_dist >= 0:
+        r_bp.append(point)
+      else:
+        l_bp.append(point)
+
+    if p2b_dist >= 0:
+      c_right.append(point)
+    else:
+      c_left.append(point)
+
+  c_left = np.array(c_left, np.float)
+  c_right = np.array(c_right, np.float)
+  r_bp = np.array(r_bp, np.float)
+  l_bp = np.array(l_bp, np.float)
+  r_nbp = np.array(r_nbp, np.float)
+  l_nbp = np.array(l_nbp, np.float)
+
+  # left, right, in boundary point, coeff
+  return c_left, c_right, (r_bp, l_bp), (r_nbp, l_nbp), coeff
+
+
+  # for point in datapoints:
+  #   dist_ca = sum((point - centroid_a) ** 2)
+  #   dist_cb = sum((point - centroid_b) ** 2)
+  #   if dist_ca <= dist_cb:
+  #     cluster_a.append(point)
+  #   else:
+  #     cluster_b.append(point)
+
+  # return np.array(cluster_a, np.float), np.array(cluster_b, np.float)
 
 
 if __name__ == '__main__':
   doctest.testmod()
-  points, label = utl.gaussian_data_generator(dim=2, cls=7)
+
+  points, label = utl.normal_data_generator(dim=2, cls=2)
+  # points, label = utl.gaussian_data_generator(dim=2, cls=7)
 
   import rwm as rwm
 
-  c1, c2, bound, coeff = rwm.rwm_cut(points)
-  a, b = tcf_cut(points)
+  c1, c2, in_boundary, in_n_boundary, coeff = rwm.rwm_cut(points)
+  a, b, in_boundary, in_n_boundary, coeff = tcf_cut(points)
 
   fig, axs = plt.subplots(1, 2)
 
