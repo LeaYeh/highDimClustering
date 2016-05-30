@@ -136,29 +136,37 @@ def _tcf(datapoints, table=None, method=3):
   pri_num, sec_num = _box_vote(datapoints)
 
   # method 3
-  data2_bar = np.mean(datapoints ** 2, axis=0)
-  rbar_2 = np.sum(np.sqrt(np.sum(datapoints ** 2, axis=1)) / size) ** 2
-  r2_bar = np.sum(data2_bar)
-  pa = 0.5 + 0.5 * np.sqrt(1 - rbar_2 / r2_bar)
-  pb = 1 - pa
-  val = np.sqrt((pb / pa) * data2_bar)
+  if method == 3:
+    data2 = datapoints ** 2
+    data2_bar = np.mean(data2, axis=0)
+    r = np.sqrt( np.sum(data2, axis = 1) )
+    rbar_2 = ( np.sum(r, axis=0) / size ) ** 2
+    r2_bar = np.sum((r ** 2), axis=0) / size
+    pa = 0.5 + 0.5 * np.sqrt(1 - rbar_2 / r2_bar)
+    pb = 1 - pa
+    val = np.sqrt((pb / pa) * data2_bar)
 
-  # ravg2= sum(np.sqrt(np.sum(datapoints ** 2, axis=1))) / size
-  # r2avg = sum(np.sum(datapoints ** 2, axis=0)) / size
-  # r2list = np.sum(datapoints ** 2, axis=0) / size
-  # pa = 0.5 + 0.5 * (1 - ravg2 / r2avg) ** 2
-  # pb = 1 - pa
-  # val = np.sqrt((pb / pa) * r2list)
+    # offset to origin 
+    centroid_a = _boxnum2coeff(pri_num, dim) * val #+ center
+    centroid_b = _boxnum2coeff(sec_num, dim) * val #+ center
+  elif method == 4:
+    data2_bar = np.mean(datapoints ** 2, axis=0)
+    rbar_2 = np.sum(np.sqrt(np.sum(datapoints ** 2, axis=1)) / size) ** 2
+    r2_bar = np.sum(data2_bar)
+    pa = 0.5 + 0.5 * np.sqrt(1 - rbar_2 / r2_bar)
+    pb = 1 - pa
+    val = np.sqrt((pb / pa) * data2_bar)
 
-  # offset to origin 
-  centroid_a = _boxnum2coeff(pri_num, dim) * val #+ center
-  centroid_b = _boxnum2coeff(sec_num, dim) * val #+ center
+    # offset to origin 
+    centroid_a = _boxnum2coeff(pri_num, dim) * val #+ center
+    centroid_b = _boxnum2coeff(sec_num, dim) * val #+ center
+
 
   v = centroid_b - centroid_a
   o = (centroid_a + centroid_b) / 2
   coeff = np.append(v, sum(-v * o))
 
-  return coeff
+  return coeff, centroid_a, centroid_b
 
 
 """
@@ -167,9 +175,7 @@ output: two list of data in each cluster
 """
 @utl.log_msg
 def tcf_cut(datapoints, boundary_width=0.1, n=2, table=None, method=3):
-  coeff = _tcf(datapoints, table, method)
-  # cluster_a = []
-  # cluster_b = []
+  coeff, oa, ob = _tcf(datapoints, table, method)
   c_left = []
   c_right = []
 
@@ -212,27 +218,17 @@ def tcf_cut(datapoints, boundary_width=0.1, n=2, table=None, method=3):
   return c_left, c_right, (r_bp, l_bp), (r_nbp, l_nbp), coeff
 
 
-  # for point in datapoints:
-  #   dist_ca = sum((point - centroid_a) ** 2)
-  #   dist_cb = sum((point - centroid_b) ** 2)
-  #   if dist_ca <= dist_cb:
-  #     cluster_a.append(point)
-  #   else:
-  #     cluster_b.append(point)
-
-  # return np.array(cluster_a, np.float), np.array(cluster_b, np.float)
-
-
 if __name__ == '__main__':
   doctest.testmod()
 
+
   points, label = utl.normal_data_generator(dim=2, cls=2)
-  # points, label = utl.gaussian_data_generator(dim=2, cls=7)
 
   import rwm as rwm
 
   c1, c2, in_boundary, in_n_boundary, coeff = rwm.rwm_cut(points)
   a, b, in_boundary, in_n_boundary, coeff = tcf_cut(points)
+  coeff, oa, ob = _tcf(points, method=3)
 
   fig, axs = plt.subplots(1, 2)
 
@@ -244,36 +240,8 @@ if __name__ == '__main__':
   axs[1].plot(a[:, 0], a[:, 1], 'ro')
   axs[1].plot(b[:, 0], b[:, 1], 'bo')
 
+  axs[1].plot(oa[0], oa[1], 'go')
+  axs[1].plot(ob[0], ob[1], 'go')
+
   plt.tight_layout()
   plt.show()
-  # plt.plot(a[:, 0], a[:, 1], 'ro')
-  # plt.plot(b[:, 0], b[:, 1], 'bo')
-  # plt.show()
-  #
-  # plt.plot(c1[:, 0], c1[:, 1], 'ro')
-  # plt.plot(c2[:, 0], c2[:, 1], 'bo')
-  # plt.show()
-
-
-  # _box_vote(points)
-  # for i in range(2, 26):
-  #   points, label = utl.gaussian_data_generator(dim=i, cls=5, objs_size=[1000, 1000, 1000, 1000, 1000])
-  #   print("dim = ", i)
-  #   tcf_cut(points)
-
-  # a, b = tcf_cut(points)
-
-
-  # print(label)
-  # for i in np.unique(label):
-  #   fetch_cluster = points[label == i]
-  #   plt.scatter(fetch_cluster[:, 0], fetch_cluster[:, 1], color=np.random.rand(3));
-  #
-  # table = build_table(range(9, 12))
-  # ca, cb = _tcf(points, table)
-  #
-  #
-  # plt.plot(ca[0], ca[1], "ro", ms=20)
-  # plt.plot(cb[0], cb[1], "go", ms=20)
-  #
-  # plt.show()
