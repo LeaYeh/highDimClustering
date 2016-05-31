@@ -1,6 +1,8 @@
 import utils as utl
 import doctest
 from rwm import cut_by_coeff
+from experiment import data_seletor
+import heapq
 np = utl.np
 plt = utl.plt
 
@@ -82,15 +84,25 @@ def _box_vote(datapoints):
   '''
 
   size, dim = datapoints.shape
-  box = np.zeros(2 ** dim, np.int)
+  box_dict = {}
+  for point in (datapoints >= 0):
+    quadrant = _bin2dec(point)
+    vote_val = box_dict.get(quadrant, 0)
+    box_dict[quadrant] = vote_val + 1
 
-  for raw in (datapoints >= 0):
-    box[_bin2dec(raw)] += 1
+  print('box_dict size = ', len(box_dict))
+  print('box_dict = ', box_dict)
 
-  box = list(enumerate(box))
-  box.sort(key=lambda x: x[1], reverse=True)
+  plt.bar(box_dict.keys(), box_dict.values())
+  plt.show()
 
-  return box[0][0], box[1][0]
+
+  # O(n)
+  res = heapq.nlargest(2, box_dict, key=box_dict.get)
+
+  print('res = ', res)
+
+  return res
 
 
 def _bin2coeff(data):
@@ -219,29 +231,46 @@ def tcf_cut(datapoints, boundary_width=0.1, n=2, table=None, method=3):
 
 
 if __name__ == '__main__':
-  doctest.testmod()
+  orig_points, orig_label = data_seletor('hand_write_digits')
+  orig_points = utl.centralize_data(orig_points)                                
+  orig_points = utl.normalize_data(orig_points)
+
+  orig_points = orig_points[:, :40]
+
+  _box_vote(orig_points)
 
 
-  points, label = utl.normal_data_generator(dim=2, cls=2)
+  # # for raw in (orig_points >= 0):
+  # #   print(raw)
+  # a = [_bin2dec(raw) for raw in (orig_points >= 0)]
+  # print(a)
+  #
+  # plt.hist(a)
+  # plt.show()
 
-  import rwm as rwm
-
-  c1, c2, in_boundary, in_n_boundary, coeff = rwm.rwm_cut(points)
-  a, b, in_boundary, in_n_boundary, coeff = tcf_cut(points)
-  coeff, oa, ob = _tcf(points, method=3)
-
-  fig, axs = plt.subplots(1, 2)
-
-  axs[0].set_title('rwm')
-  axs[0].plot(c1[:, 0], c1[:, 1], 'ro')
-  axs[0].plot(c2[:, 0], c2[:, 1], 'bo')
-
-  axs[1].set_title('analytical')
-  axs[1].plot(a[:, 0], a[:, 1], 'ro')
-  axs[1].plot(b[:, 0], b[:, 1], 'bo')
-
-  axs[1].plot(oa[0], oa[1], 'go')
-  axs[1].plot(ob[0], ob[1], 'go')
-
-  plt.tight_layout()
-  plt.show()
+  # doctest.testmod()
+  #
+  #
+  # points, label = utl.normal_data_generator(dim=2, cls=2)
+  #
+  # import rwm as rwm
+  #
+  # c1, c2, in_boundary, in_n_boundary, coeff = rwm.rwm_cut(points)
+  # a, b, in_boundary, in_n_boundary, coeff = tcf_cut(points)
+  # coeff, oa, ob = _tcf(points, method=3)
+  #
+  # fig, axs = plt.subplots(1, 2)
+  #
+  # axs[0].set_title('rwm')
+  # axs[0].plot(c1[:, 0], c1[:, 1], 'ro')
+  # axs[0].plot(c2[:, 0], c2[:, 1], 'bo')
+  #
+  # axs[1].set_title('analytical')
+  # axs[1].plot(a[:, 0], a[:, 1], 'ro')
+  # axs[1].plot(b[:, 0], b[:, 1], 'bo')
+  #
+  # axs[1].plot(oa[0], oa[1], 'go')
+  # axs[1].plot(ob[0], ob[1], 'go')
+  #
+  # plt.tight_layout()
+  # plt.show()
