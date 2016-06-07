@@ -1,11 +1,14 @@
 import utils as utl
 import rwm
+import analytical
 from sklearn.neighbors import NearestNeighbors
 np = utl.np
 plt = utl.plt
 math = utl.math
 from sklearn import datasets
-import doctest 
+import doctest
+from copy import deepcopy
+from copy import copy
 
 """
 input: 
@@ -85,51 +88,69 @@ class Tree:
 
 
     if method == 'rwm':
-      clusterL, clusterR, in_boundary, coeff = rwm.rwm_cut(self.datapoints)
-      cluster_size_L = len(clusterL)
-      cluster_size_R = len(clusterR)
-      bound_size_L = len(in_boundary[0])
-      bound_size_R = len(in_boundary[1])
-      bound_size = bound_size_L + bound_size_R
+      clusterL, clusterR, in_boundary, in_n_boundary, coeff = rwm.rwm_cut(self.datapoints)
+    elif method == 'tcf':
+      print('\nsplit shape = ', self.datapoints.shape)
+      clusterL, clusterR, in_boundary, in_n_boundary, coeff = analytical.tcf_cut(self.datapoints)
+      print('\nsplit shape = ', self.datapoints.shape)
+    print("1 of split shape = ", clusterL.shape)
+    print("1 of split shape = ", clusterR.shape)
 
-      # create node by split result
-      self.right = Tree(self, clusterR)
-      self.right.size = cluster_size_R
-      self.left = Tree(self, clusterL)
-      self.left.size = cluster_size_L
-      
-      print("[FUCK] bound_size_L = {}, cluster_size_L = {}, rate = {}".format(bound_size_L, cluster_size_L, bound_size_L / cluster_size_L))
-      print("[FUCK] bound_size_R = {}, cluster_size_R = {}, rate = {}".format(bound_size_R, cluster_size_R, bound_size_R / cluster_size_R))
-      '''
-      ==================================================
-      0.5 and/or 0.5 [64: b/1, 32: b/1, 16: n/1, 8: g/n]
-      0.3 and/or 0.3 [64: , 32: , 16: , 8: ]
-      0.1 and/or 0.1 [64: , 32: , 16: , 8: ]
-      '''
-      if (bound_size_L / cluster_size_L) > 0.3 and (bound_size_R / cluster_size_R) > 0.3:
+    cluster_size_L = len(clusterL)
+    cluster_size_R = len(clusterR)
+    bound_size_L = len(in_boundary[0])
+    bound_size_R = len(in_boundary[1])
+    n_bound_size_L = len(in_n_boundary[0])
+    n_bound_size_R = len(in_n_boundary[1])
+    bound_size = bound_size_L + bound_size_R
+
+    # create node by split result
+    self.right = Tree(self, clusterR)
+    self.right.size = cluster_size_R
+    self.left = Tree(self, clusterL)
+    self.left.size = cluster_size_L
+    
+    '''
+    ==================================================
+    0.5 and/or 0.5 [64: b/1, 32: b/1, 16: n/1, 8: g/n]
+    0.3 and/or 0.3 [64: , 32: , 16: , 8: ]
+    0.1 and/or 0.1 [64: , 32: , 16: , 8: ]
+    '''
+
+    if bound_size_L > 0 and bound_size_R > 0:
+      print("[FUCK] bound_size_L = {}, n_bound_size_L = {}, rate = {}".format(bound_size_L, n_bound_size_L, bound_size_L / n_bound_size_L))
+      print("[FUCK] bound_size_R = {}, n_bound_size_R = {}, rate = {}".format(bound_size_R, n_bound_size_R, bound_size_R / n_bound_size_R))
+      # if (bound_size_L / cluster_size_L) > 0.1 and (bound_size_R / cluster_size_R) > 0.1:
+      if (bound_size_L / n_bound_size_L) > 0.5 and (bound_size_R / n_bound_size_R) > 0.5:
         self.left.bad_cut = self.bad_cut + 1
         self.right.bad_cut = self.bad_cut + 1
         print("cut id ", Tree.total_cut, " is bad cut")
         self.left.in_bound_record.append((Tree.total_cut, 'L', in_boundary[0]))
         self.right.in_bound_record.append((Tree.total_cut, 'R', in_boundary[1]))
 
-      if self.in_bound_record:
-        print("self.in_bound_record = ", len(self.in_bound_record))
-        print("node addr = ", self)
-      for bound_rec in self.in_bound_record:
-        rec_cut_id = bound_rec[0]
-        rec_color  = bound_rec[1]
-        rec_points = bound_rec[2]
+    if self.in_bound_record:
+      print("self.in_bound_record = ", len(self.in_bound_record))
+      print("node addr = ", self)
+    for bound_rec in self.in_bound_record:
+      rec_cut_id = bound_rec[0]
+      rec_color  = bound_rec[1]
+      rec_points = bound_rec[2]
+      if method == 'rwm':
         b_left, b_right = rwm.cut_by_coeff(rec_points, coeff)
+      elif method == 'tcf':
+        b_left, b_right = analytical.cut_by_coeff(rec_points, coeff)
 
-        if b_left.shape[0]:
-          self.left.in_bound_record.append((rec_cut_id, rec_color, b_left))
-        if b_right.shape[0]:
-          self.right.in_bound_record.append((rec_cut_id, rec_color, b_right))
-        print("cur cid = {}, rec_cut_id = {}".format(Tree.total_cut, rec_cut_id))
+      if b_left.shape[0]:
+        self.left.in_bound_record.append((rec_cut_id, rec_color, b_left))
+      if b_right.shape[0]:
+        self.right.in_bound_record.append((rec_cut_id, rec_color, b_right))
+      print("cur cid = {}, rec_cut_id = {}".format(Tree.total_cut, rec_cut_id))
 
-      print("after split, child.bad_cut = {}".format(self.left.bad_cut))
-      Tree.total_cut += 1
+    print("after split, child.bad_cut = {}".format(self.left.bad_cut))
+    Tree.total_cut += 1
+
+    print("end of split shape = ", clusterL.shape)
+    print("end of split shape = ", clusterR.shape)
 
     return
 
@@ -168,6 +189,52 @@ class Tree:
     return grounded_nodes
 
 
+  def sum_cls_wards_dist(cls_points):
+    cls_num = len(cls_points)
+    total_wards_dist = 0
+
+    for i in range(cls_num):
+      for j in range(i, cls_num):
+        total_wards_dist += Tree.calc_wards_dist(cls_points[i], cls_points[j])
+
+    return total_wards_dist
+
+
+  def calc_wards_dist(cls_a, cls_b):
+    centroid_a = np.mean(cls_a, axis=0)
+    centroid_b = np.mean(cls_b, axis=0)
+    size_a = len(cls_a)
+    size_b = len(cls_b)
+
+    dist = utl.euclideanDistance(centroid_a, centroid_b)
+    scale = ( (2 * size_a * size_b) / (size_a + size_b) ) ** 0.5
+
+    return scale * dist
+
+
+  def is_better_after_merge(nodes, wards_dist):
+    if len(nodes) <= 3:
+      return -1
+
+    cls_points = []
+
+    for node in nodes:
+      if node.active:
+        cls_points.append(node.datapoints)
+
+    new_wards_dist = Tree.sum_cls_wards_dist(cls_points)
+
+    diff_dist = wards_dist - new_wards_dist
+    improved_rate = diff_dist / (wards_dist + 1)
+
+    if improved_rate > 0.6:
+      print("[is better!] {} -> {}".format(wards_dist, new_wards_dist))
+      return new_wards_dist
+    else:
+      print("[not good :(] org = {}, new = {}".format(wards_dist, new_wards_dist))
+      return -1
+
+
   def is_close_enough(cur_points, other_points):
     cur_rep = np.mean(cur_points, axis=0)
     other_rep = np.mean(other_points, axis=0)
@@ -175,8 +242,7 @@ class Tree:
     ==================================================
     [10, 5, 3, 2.5, 2]
     '''
-    # cur_size = len(cur_points)
-    # other_size = len(other_points)
+
     threshold = utl.euclideanDistance(cur_rep, other_rep) / 3
     min_dist, min_point = Tree._two_cluster_min_dist(cur_points, other_points)
 
@@ -231,6 +297,7 @@ class Tree:
     >>> Tree._two_cluster_min_dist(cur_points, other_points)
     (1.0, [array([6, 2]), array([ 6.,  1.])])
     '''
+
     min_dist = utl.euclideanDistance(cur_points[0], other_points[0])
     min_point = [ cur_points[0], other_points[0] ]
 
@@ -253,14 +320,17 @@ class Tree:
     return min_dist, min_point
 
 
-  # [problem] less to consider dist between candidate node
   @utl.log_msg
   def merge(root):
     if not root.grounded_nodes:
       root.set_grounded_node()
 
     grounded_nodes = root.grounded_nodes[:]
+    ground_points = [x.datapoints for x in grounded_nodes]
+    ground_node_num = len(ground_points)
     final_clusters = []
+
+    total_wards_dist = Tree.sum_cls_wards_dist(ground_points)
 
     while grounded_nodes:
       cur_node = grounded_nodes[0]
@@ -269,13 +339,14 @@ class Tree:
       if not cur_node.active:
         grounded_nodes.pop(0)
         continue
+
       if not cur_recs:
         grounded_nodes.pop(0)
         final_clusters.append(cur_node)
       else:
         no_merge_occour = True
 
-        for other_node in grounded_nodes[1:]:
+        for other_idx, other_node in enumerate(grounded_nodes[1:], 1):
           need_merge = False
           other_recs = other_node.in_bound_record
 
@@ -291,11 +362,22 @@ class Tree:
                 other_color = orec[1]
                 other_points = orec[2]
                 if (cur_cut_id == other_cut_id) and (cur_color != other_color):
-                  gdatas = [node.datapoints for node in grounded_nodes]
-                  repaint(gdatas)
-                  if Tree.is_close_enough(cur_points, other_points):
-                    print("{} and {} is close".format(cur_node, other_node))
+                  # if wards method is work, 改善參數 好醜= =
+                  # 這裡應該要丟 merge 後的 nodes, 但我沒有。明天改（結構好難想阿...）
+                  cls_nodes = deepcopy(grounded_nodes)
+                  tmp_cur_node = cls_nodes[0]
+                  tmp_other_node = cls_nodes[other_idx]
+                  tmp_cur_node.datapoints = np.append(tmp_cur_node.datapoints, tmp_other_node.datapoints, axis=0)
+                  tmp_other_node.active = False
+
+                  new_wards_dist = Tree.is_better_after_merge(cls_nodes, total_wards_dist)
+                  if new_wards_dist != -1:
+                    total_wards_dist = new_wards_dist
                     need_merge = True
+
+                  # if Tree.is_close_enough(cur_points, other_points):
+                  #   print("{} and {} is close".format(cur_node, other_node))
+                  #   need_merge = True
           if need_merge:
             cur_node.datapoints = np.append(cur_node.datapoints, other_node.datapoints, axis=0)
             cur_node.in_bound_record.extend(other_recs)
@@ -412,10 +494,58 @@ def check_bound_rec(grounded_nodes, merge_candidates):
   return
 
 
+def calc_num_point(clusters):
+  res = 0
+  for cls in clusters:
+    res += cls.shape[0]
+
+  return res
+
+
+def global_merge(clusters):
+  total_ward_dist = Tree.sum_cls_wards_dist(clusters)
+  res_cls = []
+
+  tmp_clusters = deepcopy(clusters)
+  while len(tmp_clusters) > 5:
+    cur_cls = tmp_clusters.pop(0)
+
+    other_idx = 0
+    for _ in range(len(tmp_clusters)):
+      other_cls = tmp_clusters.pop(other_idx)
+      merged_cls = np.append(cur_cls, other_cls, axis=0)
+      tmp_ward_dist = Tree.sum_cls_wards_dist(tmp_clusters + [merged_cls])
+      diff_dist = total_ward_dist - tmp_ward_dist
+      rate = diff_dist / total_ward_dist
+
+      if rate > 0.3:
+        total_ward_dist = tmp_ward_dist
+        cur_cls = merged_cls
+      else:
+        tmp_clusters.insert(other_idx, other_cls)
+        other_idx += 1
+
+    res_cls.append(cur_cls)
+
+  for cls in tmp_clusters:
+    res_cls.append(cls)
+
+  print("#cls {} -> {}".format(len(clusters), len(res_cls)))
+  print(calc_num_point(res_cls))
+
+  return res_cls
+
+
 if __name__ == '__main__':
   doctest.testmod()
 
-  points, label = utl.read_from_text('2d5c_cov')
+  points, label = utl.read_from_text('2d5c_noncycle')
+
+  points = utl.centralize_data(points)
+  points = utl.normalize_data(points)
+
+  # points, label = utl.read_from_text('2d5c_cov')
+  # points, label = utl.read_from_text('hand_write_digit_2d')
   # seleted = datasets.load_digits()                                                                                                   
   # points = seleted.data                                                       
   # label = seleted.target

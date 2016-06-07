@@ -92,9 +92,7 @@ def _box_vote(datapoints):
 
   res = heapq.nlargest(2, box_dict, key=box_dict.get)
 
-  print('res = ', res)
-
-  return res[0], res[1]
+  return res
 
 
 def _bin2coeff(data):
@@ -146,19 +144,20 @@ def sort_points_by_variance(points):
 
 def cut_by_coeff(orig_datapoints, coeff):
   datapoints = deepcopy(orig_datapoints)
+  datapoints = utl.centralize_data(datapoints)
+  datapoints = utl.normalize_data(datapoints)
+  datapoints = sort_points_by_variance(datapoints)[:, :5]
 
   c_left = []
   c_right = []
-  this_cut_dim = len(coeff[:-1])
   unit_len = sum(coeff[:-1] ** 2) ** 0.5
 
-  for point in datapoints[:, :this_cut_dim]:
-    p2b_dist = (sum(point * coeff[:-1]) + coeff[-1]) / unit_len
+  for orig_point, copy_point in zip(orig_datapoints, datapoints):
+    p2b_dist = (sum(copy_point * coeff[:-1]) + coeff[-1]) / unit_len
     if p2b_dist >= 0:
-      c_right.append(point)
+      c_right.append(orig_point)
     else:
-      c_left.append(point)
-
+      c_left.append(orig_point)
   c_left = np.array(c_left, np.float)
   c_right = np.array(c_right, np.float)
 
@@ -170,17 +169,15 @@ def cut_by_coeff(orig_datapoints, coeff):
 assume that PA always has higher possibility
 
 """
-def _tcf(datapoints):
-  # datapoints = deepcopy(orig_datapoints)
-
-  # datapoints = sort_points_by_variance(datapoints)[:, :20]
+def _tcf(orig_datapoints):
+  datapoints = deepcopy(orig_datapoints)
   # datapoints = utl.centralize_data(datapoints)
   # datapoints = utl.normalize_data(datapoints)
-
   size, dim = datapoints.shape
 
   data2 = datapoints ** 2
   data2_bar = np.mean(data2, axis=0)
+
 
   r = np.sqrt( np.sum(data2, axis = 1) )
   rbar_2 = ( np.sum(r, axis=0) / size ) ** 2
@@ -190,10 +187,12 @@ def _tcf(datapoints):
   pa, pb = ensure_pa_is_greater(pa, pb)
   val = np.sqrt((pb / pa) * data2_bar)
 
-  # offset to origin 
+
   pri_num, sec_num = _box_vote(datapoints)
-  centroid_a = _boxnum2coeff(pri_num, dim) * val #+ center
-  centroid_b = _boxnum2coeff(sec_num, dim) * val #+ center
+  centroid_a = _boxnum2coeff(pri_num, dim) * val
+  centroid_b = _boxnum2coeff(sec_num, dim) * val
+
+  print('centroid_a = {}, centroid_b = {}'.format(centroid_a, centroid_b))
 
   v = centroid_b - centroid_a
   o = (centroid_a + centroid_b) / 2
@@ -209,13 +208,11 @@ output: two list of data in each cluster
 @utl.log_msg
 def tcf_cut(orig_datapoints, boundary_width=0.1, n=2):
   datapoints = deepcopy(orig_datapoints)
+  datapoints = utl.centralize_data(datapoints)
+  datapoints = utl.normalize_data(datapoints)
+  datapoints = sort_points_by_variance(datapoints)[:, :5]
 
-  # _tcf will change the order of point's dim
   coeff, oa, ob = _tcf(datapoints)
-
-  this_cut_dim = oa.shape[0]
-
-  print('this_cut_dim = ', this_cut_dim)
 
   c_left = []
   c_right = []
@@ -225,13 +222,10 @@ def tcf_cut(orig_datapoints, boundary_width=0.1, n=2):
 
   r_nbp = []
   l_nbp = []
-
-  for orig_point in datapoints:
-    point = orig_point[:this_cut_dim]
-
+  for orig_point, copy_point in zip(orig_datapoints, datapoints):
     # calc distance from point to boundary
     unit_len = sum(coeff[:-1] ** 2) ** 0.5
-    p2b_dist = (sum(point * coeff[:-1]) + coeff[-1]) / unit_len
+    p2b_dist = (sum(copy_point * coeff[:-1]) + coeff[-1]) / unit_len
 
     if abs(p2b_dist) <= boundary_width * n:
       if p2b_dist >= 0:
@@ -265,12 +259,10 @@ if __name__ == '__main__':
   # doctest.testmod()
 
   from experiment import data_seletor
-  points, labels = data_seletor('hand_write_digits')
-  # points, label = utl.read_from_text('50d6c_noncycle')
-  # points = points[:, :10]
+  # points, labels = data_seletor('hand_write_digits')
 
   # points, label = utl.gaussian_data_generator(dim=2, cls=2)
-  # points, label = utl.normal_data_generator(dim=2, cls=2)
+  points, label = utl.normal_data_generator(dim=2, cls=2)
   # points = np.array([ [0, 0], [0, 1], [0, 2], [0, 3], [0, -1], [0, -2], [25, -3], [25, -2], [25, -4], [25, -6], [25, -5], [-5, 0], [-5, 1], [30, -4] ])
 
 
