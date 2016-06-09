@@ -146,7 +146,6 @@ def cut_by_coeff(orig_datapoints, coeff):
   datapoints = deepcopy(orig_datapoints)
   datapoints = utl.centralize_data(datapoints)
   datapoints = utl.normalize_data(datapoints)
-  datapoints = sort_points_by_variance(datapoints)[:, :12]
 
   c_left = []
   c_right = []
@@ -163,16 +162,35 @@ def cut_by_coeff(orig_datapoints, coeff):
 
   return (c_left, c_right)
 
+def _get_sign_by_stat_dims(datapoints):
+  ''' this func stat num of points in each dimension,
+      then decide +/- sign which has more num of points
+      Notice: it will bad effect if the possibility of +/- are too close
+  :Input:  datapoints <- np.ndarray
+  :Output: the stat result of each dimension <- list
+
+  >>> a = np.array(([1, 1, 1], [-1, -1, 1], [1, -1, 1]))
+  [1, -1, 1]
+
+  '''
+  size, dim = datapoints.shape
+  main_signs = [0] * dim
+
+  for dim_idx in range(dim):
+    tmp = datapoints[:, dim_idx]
+    num_positive = len(tmp[tmp > 0])
+    if num_positive > size / 2:
+      main_signs[dim_idx] = 1
+    else:
+      main_signs[dim_idx] = -1
+
+  return main_signs
 
 
-"""
-assume that PA always has higher possibility
-
-"""
-def _tcf(orig_datapoints):
-  datapoints = deepcopy(orig_datapoints)
-  # datapoints = utl.centralize_data(datapoints)
-  # datapoints = utl.normalize_data(datapoints)
+def _tcf(datapoints):
+  """
+  assume that PA always has higher possibility
+  """
   size, dim = datapoints.shape
 
   data2 = datapoints ** 2
@@ -188,15 +206,10 @@ def _tcf(orig_datapoints):
   val = np.sqrt((pb / pa) * data2_bar)
 
 
-  pri_num = _box_vote(datapoints)
-  ca_coeff = _boxnum2coeff(pri_num, dim)
-  cb_coeff = [-i for i in ca_coeff]
-
-  print('ca_coeff = ', ca_coeff)
-  print('cb_coeff = ', cb_coeff)
-
-  centroid_a = ca_coeff * val
-  centroid_b = cb_coeff * val
+  ca_signs = _get_sign_by_stat_dims(datapoints)
+  cb_signs = [-i for i in ca_signs]
+  centroid_a = ca_signs * val
+  centroid_b = cb_signs * val
 
   print('centroid_a = {}, centroid_b = {}'.format(centroid_a, centroid_b))
 
@@ -207,16 +220,15 @@ def _tcf(orig_datapoints):
   return coeff, centroid_a, centroid_b
 
 
-"""
-input: datapoints, table, type of method
-output: two list of data in each cluster
-"""
 @utl.log_msg
 def tcf_cut(orig_datapoints, boundary_width=0.1, n=2):
+  """
+  input: datapoints, table, type of method
+  output: two list of data in each cluster
+  """
   datapoints = deepcopy(orig_datapoints)
   datapoints = utl.centralize_data(datapoints)
   datapoints = utl.normalize_data(datapoints)
-  datapoints = sort_points_by_variance(datapoints)[:, :12]
 
   coeff, oa, ob = _tcf(datapoints)
 
