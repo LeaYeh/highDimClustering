@@ -76,11 +76,11 @@ def _box_vote(datapoints):
 
   1, 3, 3, 0, 0, 3
   >>> _box_vote(np.array([[2, -1], [4, 2], [0, 2], [-2, -10], [-2, -1], [33, 2]]))
-  (3, 0)
+  3
 
   5, 2, 7, 0, 7, 2, 2
   >>> _box_vote(np.array([[2, -1, 0], [-4, 2, -1], [2, 0, 2], [-2, -8, -10], [2, 2, 1], [-1, 2, -10], [-2, 4, -9]]))
-  (2, 7)
+  2
   '''
 
   box_dict = {}
@@ -90,7 +90,7 @@ def _box_vote(datapoints):
     num = box_dict.get(hash_idx, 0)
     box_dict[hash_idx] = num + 1
 
-  res = heapq.nlargest(2, box_dict, key=box_dict.get)
+  res = max(box_dict, key=box_dict.get)
 
   return res
 
@@ -146,7 +146,7 @@ def cut_by_coeff(orig_datapoints, coeff):
   datapoints = deepcopy(orig_datapoints)
   datapoints = utl.centralize_data(datapoints)
   datapoints = utl.normalize_data(datapoints)
-  datapoints = sort_points_by_variance(datapoints)[:, :5]
+  datapoints = sort_points_by_variance(datapoints)[:, :12]
 
   c_left = []
   c_right = []
@@ -188,9 +188,15 @@ def _tcf(orig_datapoints):
   val = np.sqrt((pb / pa) * data2_bar)
 
 
-  pri_num, sec_num = _box_vote(datapoints)
-  centroid_a = _boxnum2coeff(pri_num, dim) * val
-  centroid_b = _boxnum2coeff(sec_num, dim) * val
+  pri_num = _box_vote(datapoints)
+  ca_coeff = _boxnum2coeff(pri_num, dim)
+  cb_coeff = [-i for i in ca_coeff]
+
+  print('ca_coeff = ', ca_coeff)
+  print('cb_coeff = ', cb_coeff)
+
+  centroid_a = ca_coeff * val
+  centroid_b = cb_coeff * val
 
   print('centroid_a = {}, centroid_b = {}'.format(centroid_a, centroid_b))
 
@@ -210,7 +216,7 @@ def tcf_cut(orig_datapoints, boundary_width=0.1, n=2):
   datapoints = deepcopy(orig_datapoints)
   datapoints = utl.centralize_data(datapoints)
   datapoints = utl.normalize_data(datapoints)
-  datapoints = sort_points_by_variance(datapoints)[:, :5]
+  datapoints = sort_points_by_variance(datapoints)[:, :12]
 
   coeff, oa, ob = _tcf(datapoints)
 
@@ -279,7 +285,6 @@ if __name__ == '__main__':
   axs[0].plot(c2[:, 0], c2[:, 1], 'bo')
 
   axs[1].set_title('analytical')
-  print(b)
   axs[1].plot(a[:, 0], a[:, 1], 'ro')
   axs[1].plot(b[:, 0], b[:, 1], 'bo')
 
